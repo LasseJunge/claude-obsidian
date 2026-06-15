@@ -41,6 +41,8 @@ const TEMPLATE = String.raw`<!doctype html>
   th{color:var(--mut);font-weight:500;cursor:pointer;user-select:none}
   tr:hover td{background:#20242c}a{color:var(--acc);text-decoration:none}
   .pill{padding:2px 8px;border-radius:99px;font-size:11px;background:#243049;color:#9cc0ff}
+  .pill.auction{background:#3a2e12;color:#f0b95c}
+  .art{font-weight:600}.art.auktion{color:#f0b95c}.art.kauf{color:#9aa3ad}
   .disc{color:var(--good);font-weight:600}@media(max-width:800px){.charts{grid-template-columns:1fr}}
 </style></head><body>
 <header><h1>🏠 immo-agent · German Real-Estate &amp; Forced-Auction Monitor</h1>
@@ -59,7 +61,7 @@ const TEMPLATE = String.raw`<!doctype html>
   </div>
   <div class="card"><h3>Objekte (nach Score)</h3>
     <table id="tbl"><thead><tr>
-      <th data-k="source">Quelle</th><th data-k="title">Titel</th>
+      <th data-k="source">Quelle</th><th data-k="art">Art</th><th data-k="title">Titel</th>
       <th data-k="property_type">Typ</th><th data-k="bundesland">Land</th>
       <th data-k="price">Preis</th><th data-k="price_per_sqm">€/m²</th>
       <th data-k="gross_yield_pct">Rendite%</th>
@@ -73,9 +75,15 @@ const DATA = __DATA__;
 const $ = s => document.querySelector(s);
 const uniq = (a,k) => [...new Set(a.map(x=>x[k]).filter(Boolean))].sort();
 const eur = v => v==null?'—':(v).toLocaleString('de-DE')+' €';
+const AUCTION = new Set(['zvg','bank','is24-zvg']);
+const SRCLBL = {immoscout:'ImmoScout24','is24-zvg':'IS24 Auktion',zvg:'Zwangsvers.',bank:'Bankauktion',kleinanzeigen:'Kleinanzeigen'};
+const isAuction = s => AUCTION.has(s);
+const srcLabel = s => SRCLBL[s] || s;
+const art = s => isAuction(s) ? '🔨 Auktion' : 'Kauf';
+DATA.forEach(d => d.art = art(d.source));   // derived field for sorting/filter
 let sortKey='score', sortDir=-1;
-function fillSel(id,key,label){$(id).innerHTML=
-  '<option value="">'+label+'</option>'+uniq(DATA,key).map(v=>'<option>'+v+'</option>').join('');}
+function fillSel(id,key,label){const lbl=key==='source'?srcLabel:(v=>v);$(id).innerHTML=
+  '<option value="">'+label+'</option>'+uniq(DATA,key).map(v=>'<option value="'+v+'">'+lbl(v)+'</option>').join('');}
 fillSel('#fSource','source','Alle Quellen');
 fillSel('#fType','property_type','Alle Typen');
 fillSel('#fLand','bundesland','Alle Bundesländer');
@@ -85,7 +93,7 @@ function filtered(){
   return DATA.filter(d=>(!s||d.source===s)&&(!t||d.property_type===t)&&(!l||d.bundesland===l)
     &&((d.price||0)<=mp)&&(!q||(d.title||'').toLowerCase().includes(q)||(d.plz||'').includes(q)));}
 function kpis(rows){
-  const auc=rows.filter(r=>r.source==='zvg'||r.source==='bank');
+  const auc=rows.filter(r=>isAuction(r.source));
   const ys=rows.map(r=>r.gross_yield_pct).filter(Boolean);
   const avgY=ys.length?(ys.reduce((a,b)=>a+b,0)/ys.length).toFixed(1):'—';
   const bestD=Math.max(0,...rows.map(r=>r.auction_discount_pct||0));
@@ -101,7 +109,7 @@ function scatter(rows){
     '<line x1="'+P+'" y1="'+(H-P)+'" x2="'+(W-P)+'" y2="'+(H-P)+'" stroke="#3a414d"/>'+
     '<line x1="'+P+'" y1="'+P+'" x2="'+P+'" y2="'+(H-P)+'" stroke="#3a414d"/>'+
     pts.map(p=>'<circle cx="'+sx(p.price).toFixed(1)+'" cy="'+sy(p.gross_yield_pct).toFixed(1)+'" r="4" fill="'+
-      ((p.source==='zvg'||p.source==='bank')?'#34d399':'#4f8cff')+'"><title>'+
+      (isAuction(p.source)?'#f0b95c':'#4f8cff')+'"><title>'+
       (p.title||'')+'\n'+eur(p.price)+' · '+p.gross_yield_pct+'%</title></circle>').join('')+
     '<text x="'+(W-P)+'" y="'+(H-8)+'" fill="#9aa3ad" font-size="10" text-anchor="end">Preis →</text>'+
     '<text x="6" y="'+P+'" fill="#9aa3ad" font-size="10">Rendite%</text></svg>';}
@@ -115,7 +123,8 @@ function bars(rows){
 function table(rows){
   rows.sort((a,b)=>(((a[sortKey]??-1)>(b[sortKey]??-1))?1:-1)*sortDir);
   $('#tbl tbody').innerHTML=rows.map(r=>'<tr>'+
-    '<td><span class="pill">'+r.source+'</span></td>'+
+    '<td><span class="pill'+(isAuction(r.source)?' auction':'')+'">'+srcLabel(r.source)+'</span></td>'+
+    '<td><span class="art '+(isAuction(r.source)?'auktion':'kauf')+'">'+art(r.source)+'</span></td>'+
     '<td><a href="'+r.url+'" target="_blank">'+(r.title||'').slice(0,60)+'</a></td>'+
     '<td>'+(r.property_type||'—')+'</td><td>'+(r.bundesland||'—')+'</td>'+
     '<td>'+eur(r.price)+'</td><td>'+(r.price_per_sqm?r.price_per_sqm.toLocaleString('de-DE'):'—')+'</td>'+
