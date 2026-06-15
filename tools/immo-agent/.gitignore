@@ -9,6 +9,7 @@ immo-daily.log
 # node
 node_modules/
 package-lock.json
-# IS24 browser debug screenshots + persistent session profile
+# IS24 browser debug screenshots/dumps + persistent session profile
 is24-*.png
+is24-debug-*.json
 .is24-profile/

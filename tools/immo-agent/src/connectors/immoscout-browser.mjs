@@ -209,6 +209,25 @@ export async function fetchListings(cfg, _http) {
           added++;
         }
         console.log(`  immoscout(browser): ${city}/${type} -> ${added} listings`);
+
+        // Diagnostics (debug mode): leave a screenshot + JSON so a failed run can
+        // be inspected after the fact (the parser is unverified against live IS24).
+        if (debug) {
+          const { writeFileSync } = await import("node:fs");
+          const tag = `${city}-${type}`.replace(/[^\w-]/g, "");
+          await page.screenshot({ path: `is24-${tag}.png`, fullPage: false }).catch(() => {});
+          const capturedUrls = [];
+          try {
+            writeFileSync(`is24-debug-${tag}.json`, JSON.stringify({
+              url, title: await page.title().catch(() => ""),
+              capturedResponses: captured.length,
+              entriesFound: entries.length,
+              listingsAdded: added,
+              firstEntryKeys: entries[0] ? Object.keys(entries[0]) : [],
+              sampleEntry: entries[0] || null,
+            }, null, 2), "utf-8");
+          } catch { /* ignore */ }
+        }
       }
     }
   } finally {
