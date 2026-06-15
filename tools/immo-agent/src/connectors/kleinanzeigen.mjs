@@ -1,24 +1,44 @@
 // Kleinanzeigen (formerly eBay Kleinanzeigen) real-estate sales.
 //
-// Public listing pages, server-rendered HTML. We hit the buy categories and
-// parse result cards. Only listing facts stored — no seller PII. Defensive
-// regex parsing (no DOM lib). Offline dev: sources.kleinanzeigen.sample_html.
+// Public listing pages, server-rendered HTML. IMPORTANT: Kleinanzeigen filters
+// by a numeric LOCATION ID, not a city name — a bare "/l-hamburg/" segment is
+// ignored and returns nationwide results. We resolve the location id per city
+// via the site's own autocomplete endpoint, then build the proper URL
+// (/s-<category>/<city>/c<catId>l<locId>). Only listing facts stored — no PII.
+//
+// Offline dev: sources.kleinanzeigen.sample_html.
 import { readFileSync, existsSync } from "node:fs";
 import { makeListing } from "../model.mjs";
 import { guessPlz, stripTags, numBefore } from "./parse.mjs";
 
 const BASE = "https://www.kleinanzeigen.de";
-const CAT_PATHS = {
-  haus: "/s-haus-kaufen/c208",
-  wohnung: "/s-eigentumswohnung/c196",
-  grundstueck: "/s-grundstuecke/c209",
+const LOC_API = `${BASE}/s-ort-empfehlungen.json`;
+// property type -> { category slug, category id }
+const CATS = {
+  haus: { slug: "haus-kaufen", id: "c208" },
+  wohnung: { slug: "eigentumswohnung", id: "c196" },
+  grundstueck: { slug: "grundstuecke", id: "c209" },
 };
 
 export const name = "kleinanzeigen";
 
+const citySlug = (c) =>
+  (c || "").toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe")
+    .replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-");
+
+// Resolve a city name to Kleinanzeigen's location id (e.g. Hamburg -> 9409).
+async function resolveLocationId(city, http) {
+  const json = await http.getJson(`${LOC_API}?query=${encodeURIComponent(city)}`);
+  if (!json) return null;
+  // Keys look like "_9409"; value is the place name. Prefer an exact match.
+  const entries = Object.entries(json).filter(([k]) => k !== "_0");
+  const exact = entries.find(([, v]) => v.toLowerCase() === city.toLowerCase());
+  const pick = exact || entries[0];
+  return pick ? pick[0].replace(/^_/, "") : null;
+}
+
 function parseCards(html, forcedType) {
   const out = [];
-  // Each result is an <article class="aditem" data-adid="…"> … </article>.
   const re = /<article\b[^>]*class="[^"]*aditem[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
   let m;
   while ((m = re.exec(html))) {
@@ -28,7 +48,12 @@ function parseCards(html, forcedType) {
     if (!hrefM) continue;
     const href = hrefM[1].startsWith("http") ? hrefM[1] : BASE + hrefM[1];
     const text = stripTags(card);
-    const priceM = /([\d.]+)\s*€/.exec(text);
+    // A card can show several € figures (price, Kaution, "ab …"). The sale price
+    // is the largest, so take the max rather than the first match.
+    const prices = [...text.matchAll(/([\d.]+)\s*€/g)]
+      .map((p) => Number(p[1].replace(/\./g, "")))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    const price = prices.length ? Math.max(...prices) : null;
     const titleM = /<h2[^>]*>([\s\S]*?)<\/h2>/i.exec(card);
     out.push(makeListing({
       source: "kleinanzeigen",
@@ -36,7 +61,7 @@ function parseCards(html, forcedType) {
       url: href,
       title: stripTags(titleM ? titleM[1] : text).slice(0, 120),
       property_type: forcedType || "",
-      price: priceM ? Number(priceM[1].replace(/\./g, "")) : null,
+      price,
       living_area: numBefore(text, "m²"),
       rooms: numBefore(text, "Zimmer"),
       plz: guessPlz(text),
@@ -50,13 +75,20 @@ export async function fetchListings(cfg, http) {
   if (src.sample_html && existsSync(src.sample_html)) {
     return parseCards(readFileSync(src.sample_html, "utf-8"), "");
   }
-  const types = (cfg.property_types || Object.keys(CAT_PATHS)).filter((t) => CAT_PATHS[t]);
-  const cities = cfg.regions?.cities?.length ? cfg.regions.cities : [""];
+  const types = (cfg.property_types || Object.keys(CATS)).filter((t) => CATS[t]);
+  const cities = cfg.regions?.cities?.length ? cfg.regions.cities : [];
+  if (!cities.length) {
+    console.log("  kleinanzeigen: no cities configured (location filter needs one) — skipping");
+    return [];
+  }
   const out = [];
-  for (const t of types.length ? types : Object.keys(CAT_PATHS)) {
-    for (const city of cities) {
-      const loc = city ? `/l-${city.toLowerCase()}` : "";
-      const html = await http.getText(`${BASE}${loc}${CAT_PATHS[t]}`);
+  for (const city of cities) {
+    const locId = await resolveLocationId(city, http);
+    if (!locId) { console.log(`  kleinanzeigen: could not resolve location '${city}' — skipping`); continue; }
+    for (const t of types.length ? types : Object.keys(CATS)) {
+      const { slug, id } = CATS[t];
+      const url = `${BASE}/s-${slug}/${citySlug(city)}/${id}l${locId}`;
+      const html = await http.getText(url);
       if (html) out.push(...parseCards(html, t));
     }
   }
