@@ -12,4 +12,5 @@ package-lock.json
 # IS24 browser debug screenshots/dumps + persistent session profile
 is24-*.png
 is24-debug-*.json
+is24-page-*.html
 .is24-profile/

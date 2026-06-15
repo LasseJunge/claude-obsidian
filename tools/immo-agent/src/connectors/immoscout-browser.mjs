@@ -137,14 +137,14 @@ export async function fetchListings(cfg, _http) {
         const url = searchUrl(city, type, maxPrice);
         const timeout = (cfg.http?.timeout_seconds || 30) * 1000;
 
-        // Load the page while capturing its own search-API JSON responses.
+        // Load the page while capturing ALL JSON responses (IS24's result API
+        // host/path isn't fixed, so we keep everything and pick later/diagnose).
         const load = async () => {
           const captured = [];
           const onResp = async (resp) => {
-            const u = resp.url();
-            if (!/search|resultlist|Suche|geo/i.test(u)) return;
             if (!(resp.headers()["content-type"] || "").includes("json")) return;
-            try { captured.push(await resp.json()); } catch { /* not json */ }
+            try { captured.push({ url: resp.url(), json: await resp.json() }); }
+            catch { /* not json */ }
           };
           page.on("response", onResp);
           try {
@@ -160,7 +160,7 @@ export async function fetchListings(cfg, _http) {
 
         // Bot-wall detection.
         const title = await page.title().catch(() => "");
-        if (isBotWall(title, captured.length ? 200 : 401)) {
+        if (isBotWall(title, 200)) {
           if (debug) {
             // Headful: let the human solve "Ich bin kein Roboter", then reload.
             console.log(`  immoscout(browser): bot wall on ${city}/${type} — `
@@ -178,7 +178,7 @@ export async function fetchListings(cfg, _http) {
         }
 
         // 1) Preferred: entries from captured search-API JSON.
-        let entries = captured.flatMap(extractEntries);
+        let entries = captured.flatMap((c) => extractEntries(c.json));
 
         // 2) Fallback: scrape result cards from the DOM.
         if (!entries.length) {
@@ -215,15 +215,22 @@ export async function fetchListings(cfg, _http) {
         if (debug) {
           const { writeFileSync } = await import("node:fs");
           const tag = `${city}-${type}`.replace(/[^\w-]/g, "");
-          await page.screenshot({ path: `is24-${tag}.png`, fullPage: false }).catch(() => {});
-          const capturedUrls = [];
+          await page.screenshot({ path: `is24-${tag}.png`, fullPage: true }).catch(() => {});
+          // Full page HTML — lets me reverse-engineer the current structure
+          // (embedded JSON, data-* attributes) even if my selectors miss.
+          try { writeFileSync(`is24-page-${tag}.html`, await page.content(), "utf-8"); } catch {}
           try {
             writeFileSync(`is24-debug-${tag}.json`, JSON.stringify({
               url, title: await page.title().catch(() => ""),
-              capturedResponses: captured.length,
+              capturedResponseCount: captured.length,
+              // All JSON endpoints the page hit + their top-level keys — reveals
+              // which response holds the listings and under what shape.
+              capturedResponses: captured.map((c) => ({
+                url: c.url,
+                topKeys: c.json && typeof c.json === "object" ? Object.keys(c.json).slice(0, 25) : typeof c.json,
+              })),
               entriesFound: entries.length,
               listingsAdded: added,
-              firstEntryKeys: entries[0] ? Object.keys(entries[0]) : [],
               sampleEntry: entries[0] || null,
             }, null, 2), "utf-8");
           } catch { /* ignore */ }
