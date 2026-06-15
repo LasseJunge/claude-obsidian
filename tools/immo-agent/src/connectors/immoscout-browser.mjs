@@ -31,10 +31,9 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// Build the IS24 search URL for a city + type + price ceiling.
-function searchUrl(city, type, maxPrice) {
+// Build an IS24 search URL for a city + path segment (+ optional price ceiling).
+function searchUrl(city, path, maxPrice) {
   const slug = (city || "").toLowerCase().replace(/\s+/g, "-");
-  const path = TYPE_PATH[type] || "wohnung-kaufen";
   const q = maxPrice ? `?price=-${maxPrice}` : "";
   return `https://www.immobilienscout24.de/Suche/de/${slug}/${slug}/${path}${q}`;
 }
@@ -50,10 +49,10 @@ function mapType(re) {
 }
 
 // Normalize one IS24 result entry (the realEstate object) into a Listing.
-function entryToListing(re) {
+function entryToListing(re, source = "immoscout") {
   const addr = re.address || {};
   return makeListing({
-    source: "immoscout",
+    source,
     source_id: String(re["@id"] || re.id || re.exposeId || ""),
     url: re["@id"] ? `https://www.immobilienscout24.de/expose/${re["@id"]}` : (re.url || ""),
     title: re.title || "",
@@ -177,12 +176,22 @@ export async function fetchListings(cfg, _http) {
   // Reuse an already-open tab when attached (the launcher opened the search), else new.
   const page = (attached && ctx.pages()[0]) || (await ctx.newPage());
 
+  // Each city is searched once per "spec": the configured property types, plus
+  // IS24's own Zwangsversteigerung (foreclosure) category — which lists Hamburg
+  // auctions the official zvg-portal often doesn't carry.
+  const specs = (types.length ? types : ["wohnung"]).map((t) => ({
+    label: t, path: TYPE_PATH[t] || "wohnung-kaufen", source: "immoscout", forcedType: t,
+  }));
+  if (src.foreclosures !== false) {
+    specs.push({ label: "zwangsversteigerung", path: "zwangsversteigerung", source: "is24-zvg", forcedType: "" });
+  }
+
   const out = [];
   const seenIds = new Set();
   try {
     for (const city of cities) {
-      for (const type of types.length ? types : ["wohnung"]) {
-        const url = searchUrl(city, type, maxPrice);
+      for (const spec of specs) {
+        const url = searchUrl(city, spec.path, maxPrice);
         const timeout = (cfg.http?.timeout_seconds || 30) * 1000;
 
         // Load the page while capturing ALL JSON responses (IS24's result API
@@ -211,14 +220,14 @@ export async function fetchListings(cfg, _http) {
         if (isBotWall(title, 200)) {
           if (debug) {
             // Headful: let the human solve "Ich bin kein Roboter", then reload.
-            console.log(`  immoscout(browser): bot wall on ${city}/${type} — `
+            console.log(`  immoscout(browser): bot wall on ${city}/${spec.label} — `
               + `solve the challenge in the open window (waiting up to 120s)…`);
             await page.waitForFunction(
               () => !/kein roboter|just a moment|robot/i.test(document.title),
               { timeout: 120000 }).catch(() => {});
             captured = await load();   // re-capture now-authorized results
           } else {
-            console.log(`  immoscout(browser): bot wall on ${city}/${type}. `
+            console.log(`  immoscout(browser): bot wall on ${city}/${spec.label}. `
               + `Run once with sources.immoscout.debug=true to solve it; the cleared `
               + `session then persists for headless runs.`);
             continue;
@@ -251,21 +260,21 @@ export async function fetchListings(cfg, _http) {
 
         let added = 0;
         for (const re of entries) {
-          const l = entryToListing(re);
+          const l = entryToListing(re, spec.source);
           if (!l.source_id || seenIds.has(l.source_id)) continue;
           seenIds.add(l.source_id);
           if (city && !l.city) l.city = city;
-          if (!l.property_type) l.property_type = type;
+          if (!l.property_type && spec.forcedType) l.property_type = spec.forcedType;
           out.push(l);
           added++;
         }
-        console.log(`  immoscout(browser): ${city}/${type} -> ${added} listings`);
+        console.log(`  immoscout(browser): ${city}/${spec.label} -> ${added} listings`);
 
         // Diagnostics (debug mode): leave a screenshot + JSON so a failed run can
         // be inspected after the fact (the parser is unverified against live IS24).
         if (debug) {
           const { writeFileSync } = await import("node:fs");
-          const tag = `${city}-${type}`.replace(/[^\w-]/g, "");
+          const tag = `${city}-${spec.label}`.replace(/[^\w-]/g, "");
           await page.screenshot({ path: `is24-${tag}.png`, fullPage: true }).catch(() => {});
           // Full page HTML — lets me reverse-engineer the current structure
           // (embedded JSON, data-* attributes) even if my selectors miss.

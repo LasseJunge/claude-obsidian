@@ -2,7 +2,7 @@
 
 const round = (v, d = 2) => (v == null ? null : Math.round(v * 10 ** d) / 10 ** d);
 
-const AUCTION_SOURCES = new Set(["zvg", "bank"]);
+const AUCTION_SOURCES = new Set(["zvg", "bank", "is24-zvg"]);
 
 // Auctions can use a wider region (auction_regions) than flat searches, since
 // forced auctions are rare in a single city — see config.auction_regions.

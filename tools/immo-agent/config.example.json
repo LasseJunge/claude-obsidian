@@ -28,8 +28,8 @@
     "zvg":           { "enabled": true },
     "bank_auctions": { "enabled": true },
     "kleinanzeigen": { "enabled": true },
-    "immoscout":     { "enabled": false, "method": "browser", "debug": false,
-      "_note": "method 'browser' uses local Playwright Chromium (no paid API); 'piloterr' needs IMMO_PILOTERR_KEY. ToS-sensitive. First run: npm install playwright && npx playwright install chromium. Set debug:true to watch a headful window / solve a Cloudflare challenge once." }
+    "immoscout":     { "enabled": false, "method": "browser", "debug": false, "foreclosures": true,
+      "_note": "Run on demand via run-is24 (attaches to your real Chrome over CDP). 'foreclosures':true also scans IS24's Zwangsversteigerung category (tagged source is24-zvg). 'method':'piloterr' uses the paid API (IMMO_PILOTERR_KEY)." }
   },
 
   "output": {

@@ -14,8 +14,9 @@ import * as kleinanzeigen from "./connectors/kleinanzeigen.mjs";
 import * as immoscout from "./connectors/immoscout.mjs";
 
 const CONNECTORS = { zvg, bank_auctions: bank, kleinanzeigen, immoscout };
-// config source key -> store source label
+// config source key -> store source label(s)
 const SRC_LABEL = { immoscout: "immoscout", bank_auctions: "bank" };
+const SRC_LABELS = { immoscout: ["immoscout", "is24-zvg"], bank_auctions: ["bank"] };
 
 export const DB_PATH = join(ROOT, "immo.json");
 
@@ -59,7 +60,13 @@ export async function runAgent({ configPath, dryRun = false, is24 = false } = {}
         else if (v === "changed") summary.changed++;
       }
     }
-    if (!dryRun) summary.delisted += store.markDelisted(SRC_LABEL[key] || key, seen, now);
+    if (!dryRun) {
+      // A connector may emit more than one store-source (e.g. immoscout also
+      // emits is24-zvg for IS24 foreclosures); delist each.
+      for (const lbl of SRC_LABELS[key] || [SRC_LABEL[key] || key]) {
+        summary.delisted += store.markDelisted(lbl, seen, now);
+      }
+    }
     summary.sources[key] = { fetched: listings.length, matched: kept };
   }
 
@@ -73,7 +80,7 @@ export async function runAgent({ configPath, dryRun = false, is24 = false } = {}
     // File anything flagged as interesting (yield/discount/price) PLUS every
     // forced/bank auction — the user explicitly wants auctions surfaced even
     // when the list view carries no Verkehrswert to score against.
-    const auctions = new Set(["zvg", "bank"]);
+    const auctions = new Set(["zvg", "bank", "is24-zvg"]);
     const toFile = active.filter((l) => l.flags?.length || auctions.has(l.source));
     summary.notes = writeNotes(toFile, cfg, out.max_notes_per_run || 50);
   }

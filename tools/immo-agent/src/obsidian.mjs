@@ -5,6 +5,7 @@ import { join } from "node:path";
 const SOURCE_LABEL = {
   zvg: "Zwangsversteigerung", bank: "Bank-/Insolvenzauktion",
   kleinanzeigen: "Kleinanzeigen", immoscout: "ImmoScout24",
+  "is24-zvg": "ImmoScout24 Zwangsversteigerung",
 };
 
 const slug = (s) =>
