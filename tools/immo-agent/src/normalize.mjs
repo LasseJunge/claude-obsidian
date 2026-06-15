@@ -73,6 +73,10 @@ export function scoreAndFlag(l, cfg) {
   return l;
 }
 
-// Hard filters (region/type/price). Yield is a soft score, not a filter.
+// Hard filters: region + price always apply. The property-type filter is
+// skipped for auctions — a forced/bank/IS24 auction is worth surfacing whatever
+// the type (house, land, …), but it still must be in-region and under budget.
 export const passesFilters = (l, cfg) =>
-  matchesRegion(l, cfg) && matchesType(l, cfg) && matchesPrice(l, cfg);
+  matchesRegion(l, cfg)
+  && matchesPrice(l, cfg)
+  && (AUCTION_SOURCES.has(l.source) || matchesType(l, cfg));
