@@ -32,9 +32,20 @@ function matchesType(l, cfg) {
 function matchesPrice(l, cfg) {
   const { min = 0, max } = cfg.price || {};
   if (l.price == null) return true;
-  if (l.price < min) return false;
+  // The budget ceiling applies to everything; the floor is a flat-quality
+  // filter (drops garages/junk) and is waived for auctions — cheap = bargain.
+  const floor = AUCTION_SOURCES.has(l.source) ? 0 : min;
+  if (l.price < floor) return false;
   if (max && l.price > max) return false;
   return true;
+}
+
+// Minimum rooms — a flat-quality filter; auctions are exempt. Unknown room
+// counts are kept (don't over-filter on missing data).
+function matchesRooms(l, cfg) {
+  const min = cfg.rooms?.min;
+  if (!min || AUCTION_SOURCES.has(l.source) || l.rooms == null) return true;
+  return l.rooms >= min;
 }
 
 export function enrich(l, cfg) {
@@ -79,4 +90,5 @@ export function scoreAndFlag(l, cfg) {
 export const passesFilters = (l, cfg) =>
   matchesRegion(l, cfg)
   && matchesPrice(l, cfg)
+  && matchesRooms(l, cfg)
   && (AUCTION_SOURCES.has(l.source) || matchesType(l, cfg));

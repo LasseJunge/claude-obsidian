@@ -16,8 +16,11 @@
 
   "property_types": ["haus", "wohnung", "grundstueck"],
 
-  "price": { "min": 0, "max": 600000 },
+  "price": { "min": 150000, "max": 600000 },
   "size_sqm": { "min": 40, "max": null },
+  "rooms": { "min": 2 },
+  "exclude_new_build": true,
+  "_flat_filters_note": "rooms.min, price.min and exclude_new_build apply to FLATS only; auctions are exempt from rooms + price.min (price.max applies to all). IS24 pushes these into the search URL to fetch fewer pages.",
 
   "yield": {
     "min_gross_yield_pct": 5.0,

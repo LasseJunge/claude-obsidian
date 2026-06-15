@@ -32,14 +32,28 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// Build an IS24 search URL for a city + path segment (+ price ceiling + page).
-function searchUrl(city, path, maxPrice, page = 1) {
+// Build an IS24 search URL for a city + path segment (+ filter params + page).
+function searchUrl(city, path, baseParams, page = 1) {
   const slug = (city || "").toLowerCase().replace(/\s+/g, "-");
-  const params = [];
-  if (maxPrice) params.push(`price=-${maxPrice}`);
+  const params = [...baseParams];
   if (page > 1) params.push(`pagenumber=${page}`);
   const q = params.length ? `?${params.join("&")}` : "";
   return `https://www.immobilienscout24.de/Suche/de/${slug}/${slug}/${path}${q}`;
+}
+
+// IS24 URL filter params. Flats get the full set (price floor+ceiling, min
+// rooms, exclude new-build projects); auctions get only the budget ceiling.
+function filterParams(cfg, isAuction) {
+  const { min, max } = cfg.price || {};
+  const params = [];
+  if (isAuction) {
+    if (max) params.push(`price=-${max}`);
+    return params;
+  }
+  if (min || max) params.push(`price=${min || 0}-${max || ""}`);
+  if (cfg.rooms?.min) params.push(`numberofrooms=${cfg.rooms.min}.0-`);
+  if (cfg.exclude_new_build) params.push("exclusioncriteria=projectlisting");
+  return params;
 }
 
 // Map IS24's type label (e.g. "search:ApartmentBuy", "apartmentBuy") to ours.
@@ -172,7 +186,6 @@ export async function fetchListings(cfg, _http) {
   const debug = !!src.debug;
   const cities = cfg.regions?.cities?.length ? cfg.regions.cities : [""];
   const types = (cfg.property_types || ["wohnung"]).filter((t) => TYPE_PATH[t]);
-  const maxPrice = cfg.price?.max || "";
   const maxPages = src.max_pages || 50;   // page through all results (cap as a backstop)
   const ua = cfg.http?.user_agent
     || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -211,10 +224,14 @@ export async function fetchListings(cfg, _http) {
   // IS24's own Zwangsversteigerung (foreclosure) category — which lists Hamburg
   // auctions the official zvg-portal often doesn't carry.
   const specs = (types.length ? types : ["wohnung"]).map((t) => ({
-    label: t, path: TYPE_PATH[t] || "wohnung-kaufen", source: "immoscout", forcedType: t,
+    label: t, path: TYPE_PATH[t] || "wohnung-kaufen", source: "immoscout",
+    forcedType: t, params: filterParams(cfg, false),
   }));
   if (src.foreclosures !== false) {
-    specs.push({ label: "zwangsversteigerung", path: "zwangsversteigerung", source: "is24-zvg", forcedType: "" });
+    specs.push({
+      label: "zwangsversteigerung", path: "zwangsversteigerung", source: "is24-zvg",
+      forcedType: "", params: filterParams(cfg, true),
+    });
   }
 
   const out = [];
@@ -239,7 +256,7 @@ export async function fetchListings(cfg, _http) {
       for (const spec of specs) {
         let specAdded = 0, totalPages = 1;
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-          const url = searchUrl(city, spec.path, maxPrice, pageNum);
+          const url = searchUrl(city, spec.path, spec.params, pageNum);
           let captured = await load(url);
 
           // Bot-wall detection (only really expected on the first page).
