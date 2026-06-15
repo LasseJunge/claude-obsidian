@@ -49,8 +49,14 @@ function mapType(re) {
 }
 
 // Normalize one IS24 result entry (the realEstate object) into a Listing.
+// IS24 addresses carry no Bundesland. For the three city-states the city name
+// IS the Bundesland, so derive it — keeps region matching robust even if a
+// config only lists Bundesländer.
+const CITY_STATES = new Set(["hamburg", "berlin", "bremen"]);
+
 function entryToListing(re, source = "immoscout") {
   const addr = re.address || {};
+  const city = addr.city || "";
   return makeListing({
     source,
     source_id: String(re["@id"] || re.id || re.exposeId || ""),
@@ -60,8 +66,9 @@ function entryToListing(re, source = "immoscout") {
     price: num(re.price?.value ?? re.price) || null,   // 0 == "Preis auf Anfrage"
     living_area: num(re.livingSpace ?? re.area),
     rooms: num(re.numberOfRooms ?? re.rooms),
-    city: addr.city || "",
+    city,
     plz: String(addr.postcode || ""),
+    bundesland: CITY_STATES.has(city.toLowerCase()) ? city : "",
     lat: num(addr.wgs84Coordinate?.latitude),
     lng: num(addr.wgs84Coordinate?.longitude),
   });

@@ -9,7 +9,9 @@
 
   "_auction_regions_note": "Optional: auctions (zvg + bank) use this wider region instead of `regions`, since forced auctions are rare in a single city. Omit to use `regions` for everything.",
   "auction_regions": {
-    "bundeslaender": ["Hamburg", "Schleswig-Holstein", "Niedersachsen"]
+    "bundeslaender": ["Hamburg", "Schleswig-Holstein", "Niedersachsen"],
+    "cities": ["Hamburg"],
+    "plz_prefixes": ["20", "21", "22"]
   },
 
   "property_types": ["haus", "wohnung", "grundstueck"],
