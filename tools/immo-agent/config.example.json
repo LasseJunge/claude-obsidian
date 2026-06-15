@@ -7,6 +7,11 @@
     "cities": ["Hamburg", "Lübeck", "Kiel"]
   },
 
+  "_auction_regions_note": "Optional: auctions (zvg + bank) use this wider region instead of `regions`, since forced auctions are rare in a single city. Omit to use `regions` for everything.",
+  "auction_regions": {
+    "bundeslaender": ["Hamburg", "Schleswig-Holstein", "Niedersachsen"]
+  },
+
   "property_types": ["haus", "wohnung", "grundstueck"],
 
   "price": { "min": 0, "max": 600000 },

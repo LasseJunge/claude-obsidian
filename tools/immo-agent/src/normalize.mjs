@@ -2,8 +2,17 @@
 
 const round = (v, d = 2) => (v == null ? null : Math.round(v * 10 ** d) / 10 ** d);
 
+const AUCTION_SOURCES = new Set(["zvg", "bank"]);
+
+// Auctions can use a wider region (auction_regions) than flat searches, since
+// forced auctions are rare in a single city — see config.auction_regions.
+function regionFor(l, cfg) {
+  if (AUCTION_SOURCES.has(l.source) && cfg.auction_regions) return cfg.auction_regions;
+  return cfg.regions || {};
+}
+
 function matchesRegion(l, cfg) {
-  const r = cfg.regions || {};
+  const r = regionFor(l, cfg);
   const bl = (r.bundeslaender || []).map((x) => x.toLowerCase());
   const plz = r.plz_prefixes || [];
   const cities = (r.cities || []).map((x) => x.toLowerCase());

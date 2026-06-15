@@ -41,7 +41,9 @@ const TERMIN_RE = /(\d{1,2})\.\s*([A-Za-zÄÖÜäöü]+)\s*(\d{4})/;
 export const name = "zvg";
 
 function lands(cfg) {
-  const names = (cfg.regions?.bundeslaender || []).map((n) => n.toLowerCase());
+  // Auctions use auction_regions when set (wider than the flat-search region).
+  const region = cfg.auction_regions || cfg.regions || {};
+  const names = (region.bundeslaender || []).map((n) => n.toLowerCase());
   const abks = names.map((n) => LAND_ABK[n]).filter(Boolean);
   return abks.length ? abks : Object.values(LAND_ABK);
 }
