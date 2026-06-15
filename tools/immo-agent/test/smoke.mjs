@@ -58,4 +58,16 @@ const dash = generateDashboard(raw, cfg, "test");
 ok("dashboard file exists", existsSync(dash));
 ok("dashboard embeds data", readFileSync(dash, "utf-8").includes("123456"));
 
+// --- ImmoScout24 HTML-blob parser (the resultListModel embedded in the page) ---
+const { extractFromHtml } = await import("../src/connectors/immoscout-browser.mjs");
+const is24Html = `<html><script>
+  IS24.resultList = { Mobile:false, resultListModel: {"searchResponseModel":{"resultlist.resultlist":{"resultlistEntries":[{"resultlistEntry":[
+    {"resultlist.realEstate":{"@xsi.type":"search:ApartmentBuy","@id":"153495230","title":"Test ETW","address":{"postcode":"22767","city":"Hamburg"},"price":{"value":329900,"currency":"EUR"},"livingSpace":34,"numberOfRooms":1.5}},
+    {"resultlist.realEstate":{"@xsi.type":"search:ApartmentBuy","@id":"159325420","title":"Zwei","address":{"postcode":"22527","city":"Hamburg"},"price":{"value":285000},"livingSpace":28,"numberOfRooms":1}}
+  ]}]}}} };
+</script></html>`;
+const is24 = extractFromHtml(is24Html);
+ok("IS24 extractFromHtml parses embedded resultListModel (2 entries)", is24.length === 2);
+ok("IS24 entry has @id + price + postcode", is24[0]["@id"] === "153495230" && is24[0].price.value === 329900 && is24[0].address.postcode === "22767");
+
 console.log(`\nAll ${pass} checks passed.`);

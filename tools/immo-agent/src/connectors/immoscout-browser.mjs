@@ -39,17 +39,26 @@ function searchUrl(city, type, maxPrice) {
   return `https://www.immobilienscout24.de/Suche/de/${slug}/${slug}/${path}${q}`;
 }
 
+// Map IS24's type label (e.g. "search:ApartmentBuy", "apartmentBuy") to ours.
+function mapType(re) {
+  const rt = String(re["@xsi.type"] || re.realEstateType || "").toLowerCase();
+  if (rt.includes("apartment")) return "wohnung";
+  if (rt.includes("house") || rt.includes("haus")) return "haus";
+  if (rt.includes("site") || rt.includes("grund")) return "grundstueck";
+  if (rt.includes("commercial") || rt.includes("office") || rt.includes("store")) return "gewerbe";
+  return "";
+}
+
 // Normalize one IS24 result entry (the realEstate object) into a Listing.
 function entryToListing(re) {
   const addr = re.address || {};
-  const rt = String(re["@xsi.type"] || re.realEstateType || "").toLowerCase().replace(/[^a-z]/g, "");
   return makeListing({
     source: "immoscout",
     source_id: String(re["@id"] || re.id || re.exposeId || ""),
     url: re["@id"] ? `https://www.immobilienscout24.de/expose/${re["@id"]}` : (re.url || ""),
     title: re.title || "",
-    property_type: TYPE_MAP[rt] || "",
-    price: num(re.price?.value ?? re.price),
+    property_type: mapType(re),
+    price: num(re.price?.value ?? re.price) || null,   // 0 == "Preis auf Anfrage"
     living_area: num(re.livingSpace ?? re.area),
     rooms: num(re.numberOfRooms ?? re.rooms),
     city: addr.city || "",
@@ -57,6 +66,32 @@ function entryToListing(re) {
     lat: num(addr.wgs84Coordinate?.latitude),
     lng: num(addr.wgs84Coordinate?.longitude),
   });
+}
+
+// IS24 embeds the results as a JSON blob in the page HTML (assigned to
+// `resultListModel: {...}` inside IS24.resultList), NOT in an XHR — so we
+// brace-match that object out of the HTML and feed it to extractEntries().
+export function extractFromHtml(html) {
+  const marker = html.indexOf("resultListModel:");
+  if (marker === -1) return [];
+  const start = html.indexOf("{", marker);
+  if (start === -1) return [];
+  let depth = 0, inStr = false, esc = false, end = -1;
+  for (let j = start; j < html.length; j++) {
+    const c = html[j];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) { end = j + 1; break; }
+  }
+  if (end === -1) return [];
+  try {
+    const model = JSON.parse(html.slice(start, end));
+    return extractEntries(model.searchResponseModel || model);
+  } catch { return []; }
 }
 
 // Pull result entries out of whatever JSON IS24's search API returned.
@@ -190,10 +225,13 @@ export async function fetchListings(cfg, _http) {
           }
         }
 
-        // 1) Preferred: entries from captured search-API JSON.
-        let entries = captured.flatMap((c) => extractEntries(c.json));
+        // 1) Preferred: the resultListModel JSON embedded in the page HTML.
+        let entries = extractFromHtml(await page.content().catch(() => ""));
 
-        // 2) Fallback: scrape result cards from the DOM.
+        // 2) Otherwise any captured search-API JSON.
+        if (!entries.length) entries = captured.flatMap((c) => extractEntries(c.json));
+
+        // 3) Fallback: scrape result cards from the DOM.
         if (!entries.length) {
           const cards = await page.$$eval("article[data-obid], [data-id].result-list-entry, .result-list__listing", (els) =>
             els.map((el) => ({
