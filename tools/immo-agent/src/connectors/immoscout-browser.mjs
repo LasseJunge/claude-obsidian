@@ -112,22 +112,35 @@ export async function fetchListings(cfg, _http) {
   const ua = cfg.http?.user_agent
     || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-  // Persistent profile so a solved challenge carries over between runs.
+  // Preferred: ATTACH to a real Chrome the user launched themselves (genuine
+  // fingerprint — IS24 can't tell it's automated). The launcher script opens
+  // Chrome with --remote-debugging-port; we connect over CDP. If that fails,
+  // fall back to launching our own Chromium (usually hard-blocked by IS24).
+  const cdpUrl = src.cdp_url || process.env.IMMO_CDP_URL || "http://127.0.0.1:9222";
   const { fileURLToPath } = await import("node:url");
   const { dirname, join } = await import("node:path");
-  const profileDir = src.profile_dir
-    || join(dirname(fileURLToPath(import.meta.url)), "..", "..", ".is24-profile");
 
-  const ctx = await chromium.launchPersistentContext(profileDir, {
-    headless: !debug,
-    locale: "de-DE",
-    userAgent: ua,
-    viewport: { width: 1366, height: 900 },
-    args: ["--disable-blink-features=AutomationControlled"],
-  });
-  await ctx.addInitScript(STEALTH);
-  const browser = ctx.browser();
-  const page = await ctx.newPage();
+  let browser, ctx, attached = false;
+  try {
+    browser = await chromium.connectOverCDP(cdpUrl);
+    ctx = browser.contexts()[0] || (await browser.newContext());
+    attached = true;
+    console.log(`  immoscout(browser): attached to your Chrome at ${cdpUrl}`);
+  } catch {
+    const profileDir = src.profile_dir
+      || join(dirname(fileURLToPath(import.meta.url)), "..", "..", ".is24-profile");
+    console.log(`  immoscout(browser): no Chrome on ${cdpUrl} — launching own browser `
+      + `(IS24 usually blocks this; use the run-is24 launcher to attach instead).`);
+    ctx = await chromium.launchPersistentContext(profileDir, {
+      headless: !debug, locale: "de-DE", userAgent: ua,
+      viewport: { width: 1366, height: 900 },
+      args: ["--disable-blink-features=AutomationControlled"],
+    });
+    await ctx.addInitScript(STEALTH);
+    browser = ctx.browser();
+  }
+  // Reuse an already-open tab when attached (the launcher opened the search), else new.
+  const page = (attached && ctx.pages()[0]) || (await ctx.newPage());
 
   const out = [];
   const seenIds = new Set();
@@ -238,9 +251,13 @@ export async function fetchListings(cfg, _http) {
       }
     }
   } finally {
-    // Persistent context: closing the context tears down the browser too.
-    await ctx.close().catch(() => {});
-    if (browser) await browser.close().catch(() => {});
+    if (attached) {
+      // Leave the user's Chrome open — just detach.
+      await browser.close().catch(() => {});   // for CDP this disconnects, doesn't quit Chrome
+    } else {
+      await ctx.close().catch(() => {});
+      if (browser) await browser.close().catch(() => {});
+    }
   }
   return out;
 }
