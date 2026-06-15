@@ -15,6 +15,7 @@
 // Playwright is an OPTIONAL dependency (keeps the rest of the tool zero-dep):
 //   npm install playwright && npx playwright install chromium
 import { makeListing } from "../model.mjs";
+import { euro } from "./parse.mjs";
 
 export const name = "immoscout";
 
@@ -31,10 +32,13 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// Build an IS24 search URL for a city + path segment (+ optional price ceiling).
-function searchUrl(city, path, maxPrice) {
+// Build an IS24 search URL for a city + path segment (+ price ceiling + page).
+function searchUrl(city, path, maxPrice, page = 1) {
   const slug = (city || "").toLowerCase().replace(/\s+/g, "-");
-  const q = maxPrice ? `?price=-${maxPrice}` : "";
+  const params = [];
+  if (maxPrice) params.push(`price=-${maxPrice}`);
+  if (page > 1) params.push(`pagenumber=${page}`);
+  const q = params.length ? `?${params.join("&")}` : "";
   return `https://www.immobilienscout24.de/Suche/de/${slug}/${slug}/${path}${q}`;
 }
 
@@ -100,6 +104,25 @@ export function extractFromHtml(html) {
   } catch { return []; }
 }
 
+// Total result pages reported by the embedded model (for pagination).
+function pageCount(html) {
+  const m = /"numberOfPages":\s*"?(\d+)/.exec(html);
+  return m ? Number(m[1]) : 1;
+}
+
+// Foreclosures expose the starting bid in a separate `search_result_list`
+// block (the realEstate object has no price). Map expose_id -> Mindestgebot €.
+function parseBidMap(html) {
+  const map = new Map();
+  const re = /"expose_id":"(\d+)"[\s\S]*?"minimum_bid":"([^"]+)"/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const v = euro(m[2]);
+    if (v != null) map.set(m[1], v);
+  }
+  return map;
+}
+
 // Pull result entries out of whatever JSON IS24's search API returned.
 function extractEntries(json) {
   // Known shape: searchResponseModel["resultlist.resultlist"].resultlistEntries[].resultlistEntry[]
@@ -150,6 +173,7 @@ export async function fetchListings(cfg, _http) {
   const cities = cfg.regions?.cities?.length ? cfg.regions.cities : [""];
   const types = (cfg.property_types || ["wohnung"]).filter((t) => TYPE_PATH[t]);
   const maxPrice = cfg.price?.max || "";
+  const maxPages = src.max_pages || 50;   // page through all results (cap as a backstop)
   const ua = cfg.http?.user_agent
     || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
@@ -196,112 +220,82 @@ export async function fetchListings(cfg, _http) {
   const out = [];
   const seenIds = new Set();
   try {
+    const timeout = (cfg.http?.timeout_seconds || 30) * 1000;
+    // Load a URL while capturing the page's JSON responses (for diagnostics).
+    const load = async (targetUrl) => {
+      const captured = [];
+      const onResp = async (resp) => {
+        if (!(resp.headers()["content-type"] || "").includes("json")) return;
+        try { captured.push({ url: resp.url(), json: await resp.json() }); } catch { /* not json */ }
+      };
+      page.on("response", onResp);
+      try { await page.goto(targetUrl, { waitUntil: "networkidle", timeout }); }
+      catch (e) { console.log(`  immoscout(browser): nav ${targetUrl}: ${e.message}`); }
+      page.off("response", onResp);
+      return captured;
+    };
+
     for (const city of cities) {
       for (const spec of specs) {
-        const url = searchUrl(city, spec.path, maxPrice);
-        const timeout = (cfg.http?.timeout_seconds || 30) * 1000;
+        let specAdded = 0, totalPages = 1;
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+          const url = searchUrl(city, spec.path, maxPrice, pageNum);
+          let captured = await load(url);
 
-        // Load the page while capturing ALL JSON responses (IS24's result API
-        // host/path isn't fixed, so we keep everything and pick later/diagnose).
-        const load = async () => {
-          const captured = [];
-          const onResp = async (resp) => {
-            if (!(resp.headers()["content-type"] || "").includes("json")) return;
-            try { captured.push({ url: resp.url(), json: await resp.json() }); }
-            catch { /* not json */ }
-          };
-          page.on("response", onResp);
-          try {
-            await page.goto(url, { waitUntil: "networkidle", timeout });
-          } catch (e) {
-            console.log(`  immoscout(browser): nav ${url}: ${e.message}`);
+          // Bot-wall detection (only really expected on the first page).
+          const title = await page.title().catch(() => "");
+          if (isBotWall(title, 200)) {
+            if (debug) {
+              console.log(`  immoscout(browser): bot wall on ${city}/${spec.label} — `
+                + `solve the challenge in the open window (waiting up to 120s)…`);
+              await page.waitForFunction(
+                () => !/kein roboter|just a moment|robot/i.test(document.title),
+                { timeout: 120000 }).catch(() => {});
+              captured = await load(url);
+            } else {
+              console.log(`  immoscout(browser): bot wall on ${city}/${spec.label}. `
+                + `Run via the run-is24 launcher (attaches to your real Chrome).`);
+              break;
+            }
           }
-          page.off("response", onResp);
-          return captured;
-        };
 
-        let captured = await load();
+          const html = await page.content().catch(() => "");
+          if (pageNum === 1) totalPages = Math.min(maxPages, pageCount(html) || 1);
 
-        // Bot-wall detection.
-        const title = await page.title().catch(() => "");
-        if (isBotWall(title, 200)) {
-          if (debug) {
-            // Headful: let the human solve "Ich bin kein Roboter", then reload.
-            console.log(`  immoscout(browser): bot wall on ${city}/${spec.label} — `
-              + `solve the challenge in the open window (waiting up to 120s)…`);
-            await page.waitForFunction(
-              () => !/kein roboter|just a moment|robot/i.test(document.title),
-              { timeout: 120000 }).catch(() => {});
-            captured = await load();   // re-capture now-authorized results
-          } else {
-            console.log(`  immoscout(browser): bot wall on ${city}/${spec.label}. `
-              + `Run once with sources.immoscout.debug=true to solve it; the cleared `
-              + `session then persists for headless runs.`);
-            continue;
+          let entries = extractFromHtml(html);
+          if (!entries.length) entries = captured.flatMap((c) => extractEntries(c.json));
+
+          // Foreclosures: merge the Mindestgebot (starting bid) in as price.
+          const bids = spec.source === "is24-zvg" ? parseBidMap(html) : null;
+
+          let pageAdded = 0;
+          for (const re of entries) {
+            const l = entryToListing(re, spec.source);
+            if (!l.source_id || seenIds.has(l.source_id)) continue;
+            seenIds.add(l.source_id);
+            if (city && !l.city) l.city = city;
+            if (!l.property_type && spec.forcedType) l.property_type = spec.forcedType;
+            if (bids && l.price == null) l.price = bids.get(l.source_id) ?? null;
+            out.push(l);
+            pageAdded++; specAdded++;
           }
+
+          // Diagnostics: only the first page, to avoid clutter.
+          if (debug && pageNum === 1) {
+            const { writeFileSync } = await import("node:fs");
+            const tag = `${city}-${spec.label}`.replace(/[^\w-]/g, "");
+            await page.screenshot({ path: `is24-${tag}.png`, fullPage: true }).catch(() => {});
+            try { writeFileSync(`is24-page-${tag}.html`, html, "utf-8"); } catch { /* ignore */ }
+            try {
+              writeFileSync(`is24-debug-${tag}.json`, JSON.stringify({
+                url, title, totalPages, entriesFound: entries.length, sampleEntry: entries[0] || null,
+              }, null, 2), "utf-8");
+            } catch { /* ignore */ }
+          }
+
+          if (!entries.length) break;   // nothing more to page through
         }
-
-        // 1) Preferred: the resultListModel JSON embedded in the page HTML.
-        let entries = extractFromHtml(await page.content().catch(() => ""));
-
-        // 2) Otherwise any captured search-API JSON.
-        if (!entries.length) entries = captured.flatMap((c) => extractEntries(c.json));
-
-        // 3) Fallback: scrape result cards from the DOM.
-        if (!entries.length) {
-          const cards = await page.$$eval("article[data-obid], [data-id].result-list-entry, .result-list__listing", (els) =>
-            els.map((el) => ({
-              "@id": el.getAttribute("data-obid") || el.getAttribute("data-id") || "",
-              title: el.querySelector("h2,h5,.result-list-entry__brand-title")?.textContent?.trim() || "",
-              priceText: el.querySelector("[data-is24-qa='attribute-1'] dd, .result-list-entry__primary-criterion dd")?.textContent || "",
-              areaText: [...el.querySelectorAll("dd")].map((d) => d.textContent).find((t) => /m²/.test(t)) || "",
-              roomsText: [...el.querySelectorAll("dd")].map((d) => d.textContent).find((t) => /Zi/.test(t)) || "",
-            })).filter((x) => x["@id"])
-          ).catch(() => []);
-          entries = cards.map((c) => ({
-            "@id": c["@id"], title: c.title,
-            price: c.priceText, livingSpace: c.areaText, numberOfRooms: c.roomsText,
-            address: {},
-          }));
-        }
-
-        let added = 0;
-        for (const re of entries) {
-          const l = entryToListing(re, spec.source);
-          if (!l.source_id || seenIds.has(l.source_id)) continue;
-          seenIds.add(l.source_id);
-          if (city && !l.city) l.city = city;
-          if (!l.property_type && spec.forcedType) l.property_type = spec.forcedType;
-          out.push(l);
-          added++;
-        }
-        console.log(`  immoscout(browser): ${city}/${spec.label} -> ${added} listings`);
-
-        // Diagnostics (debug mode): leave a screenshot + JSON so a failed run can
-        // be inspected after the fact (the parser is unverified against live IS24).
-        if (debug) {
-          const { writeFileSync } = await import("node:fs");
-          const tag = `${city}-${spec.label}`.replace(/[^\w-]/g, "");
-          await page.screenshot({ path: `is24-${tag}.png`, fullPage: true }).catch(() => {});
-          // Full page HTML — lets me reverse-engineer the current structure
-          // (embedded JSON, data-* attributes) even if my selectors miss.
-          try { writeFileSync(`is24-page-${tag}.html`, await page.content(), "utf-8"); } catch {}
-          try {
-            writeFileSync(`is24-debug-${tag}.json`, JSON.stringify({
-              url, title: await page.title().catch(() => ""),
-              capturedResponseCount: captured.length,
-              // All JSON endpoints the page hit + their top-level keys — reveals
-              // which response holds the listings and under what shape.
-              capturedResponses: captured.map((c) => ({
-                url: c.url,
-                topKeys: c.json && typeof c.json === "object" ? Object.keys(c.json).slice(0, 25) : typeof c.json,
-              })),
-              entriesFound: entries.length,
-              listingsAdded: added,
-              sampleEntry: entries[0] || null,
-            }, null, 2), "utf-8");
-          } catch { /* ignore */ }
-        }
+        console.log(`  immoscout(browser): ${city}/${spec.label} -> ${specAdded} listings (${totalPages} page${totalPages > 1 ? "s" : ""})`);
       }
     }
   } finally {
