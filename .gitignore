@@ -107,6 +107,9 @@ claude-canvas/
 # Codex CLI sentinel marker (0-byte read-only file created by `codex` runs)
 .codex
 
+# immo-agent generated output (regenerated each run from the gitignored immo.json)
+wiki/immo/
+
 # User-specific attachments
 _attachments/
 

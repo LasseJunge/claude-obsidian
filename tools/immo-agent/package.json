@@ -1,0 +1,22 @@
+{
+  "name": "immo-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Autonomous German real-estate + forced-auction (Zwangsversteigerung) monitor. Zero dependencies — runs on Node 18+ built-ins.",
+  "bin": {
+    "immo-agent": "src/index.mjs"
+  },
+  "scripts": {
+    "run": "node src/index.mjs run",
+    "dry": "node src/index.mjs run --dry",
+    "top": "node src/index.mjs top",
+    "dashboard": "node src/index.mjs dashboard"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.61.0"
+  }
+}

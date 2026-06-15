@@ -1,0 +1,42 @@
+{
+  "_comment": "Copy to config.json and edit. Search is region- + property-type- + yield-focused.",
+
+  "regions": {
+    "bundeslaender": ["Hamburg", "Schleswig-Holstein", "Niedersachsen"],
+    "plz_prefixes": ["20", "21", "22", "23", "24", "25"],
+    "cities": ["Hamburg", "Lübeck", "Kiel"]
+  },
+
+  "property_types": ["haus", "wohnung", "grundstueck"],
+
+  "price": { "min": 0, "max": 600000 },
+  "size_sqm": { "min": 40, "max": null },
+
+  "yield": {
+    "min_gross_yield_pct": 5.0,
+    "min_auction_discount_pct": 25.0,
+    "max_price_per_sqm": 3500
+  },
+  "rent_benchmark_eur_sqm": 12.5,
+
+  "sources": {
+    "zvg":           { "enabled": true },
+    "bank_auctions": { "enabled": true },
+    "kleinanzeigen": { "enabled": true },
+    "immoscout":     { "enabled": false, "method": "browser", "debug": false,
+      "_note": "method 'browser' uses local Playwright Chromium (no paid API); 'piloterr' needs IMMO_PILOTERR_KEY. ToS-sensitive. First run: npm install playwright && npx playwright install chromium. Set debug:true to watch a headful window / solve a Cloudflare challenge once." }
+  },
+
+  "output": {
+    "obsidian_notes": true,
+    "vault_subdir": "wiki/immo",
+    "dashboard": true,
+    "max_notes_per_run": 50
+  },
+
+  "http": {
+    "user_agent": "immo-agent/1.0 (personal research; contact ljunge@epages.com)",
+    "delay_seconds": 2.0,
+    "timeout_seconds": 30
+  }
+}
