@@ -4,6 +4,8 @@ config.json
 immo.json
 # offline test sandbox
 test/out/
+# scheduled-run log
+immo-daily.log
 # node
 node_modules/
 package-lock.json

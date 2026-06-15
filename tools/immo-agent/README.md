@@ -81,15 +81,28 @@ $env:IMMO_PILOTERR_KEY = "your-key"      # PowerShell
 
 Each run dedups against `immo.json`, so scheduling it just keeps the vault fresh.
 
+A task named **`immo-agent-daily`** is installed to run at **09:00**, run-if-missed
+(catches up next time the laptop is on), allowed on battery, logging to `immo-daily.log`.
+The laptop must be powered on and online; it is not woken from sleep.
+
+Recreate / change it:
+
 ```powershell
 $node = (Get-Command node).Source
 $dir  = "C:\Users\ljunge\claude-obsidian\tools\immo-agent"
-$action  = New-ScheduledTaskAction -Execute $node -Argument "src\index.mjs run" -WorkingDirectory $dir
-$trigger = New-ScheduledTaskTrigger -Daily -At 7am
-Register-ScheduledTask -TaskName "immo-agent" -Action $action -Trigger $trigger -Description "Daily German real-estate + auction scan"
+$action  = New-ScheduledTaskAction -Execute "cmd.exe" `
+  -Argument "/c `"`"$node`" src\index.mjs run >> immo-daily.log 2>&1`"" -WorkingDirectory $dir
+$trigger = New-ScheduledTaskTrigger -Daily -At 9am
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -TaskName "immo-agent-daily" -Action $action -Trigger $trigger `
+  -Settings $settings -Description "Daily German real-estate + auction scan" -Force
 ```
 
-Remove with `Unregister-ScheduledTask -TaskName "immo-agent"`.
+Run it now: `Start-ScheduledTask -TaskName "immo-agent-daily"`.
+Remove it: `Unregister-ScheduledTask -TaskName "immo-agent-daily" -Confirm:$false`.
+
+ImmoScout24 is **not** part of this job (headful-only — see above); run it on demand
+with `node src/index.mjs run --is24`.
 
 ## Architecture
 
