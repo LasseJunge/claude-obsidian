@@ -9,6 +9,7 @@ Usage:
 - `/immo top` — just show the current top matches from the last run (no fetch).
 - `/immo <region/type/budget>` — adjust the search (e.g. `/immo Berlin Wohnung unter 400k`); update `config.json` accordingly, confirm the change, then run.
 - `/immo dashboard` — rebuild the dashboard from stored data without fetching.
+- `/immo is24` — include ImmoScout24. Runs `node src/index.mjs run --is24` (headful browser, on demand). Tell the user it must run from their own terminal and they may need to solve a "Ich bin kein Roboter" challenge once; IS24 is intentionally excluded from the headless/scheduled job.
 
 The agent runs locally on Node (no Python). After it finishes, report:
 1. How many objects each source returned and how many matched.

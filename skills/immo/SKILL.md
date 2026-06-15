@@ -32,12 +32,13 @@ this machine has no real Python interpreter; the agent is intentionally Node-onl
    - `bank_auctions` — Deutsche Grundstücksauktionen AG / argetra catalogue (JSON markers:
      Limit/starting price, category, region, GPS).
    - `kleinanzeigen` — Kleinanzeigen buy categories (Haus / Wohnung / Grundstück).
-   - `immoscout` — ImmoScout24 via a real **headless browser** (Playwright Chromium, no
-     paid API). IS24 throws a "Ich bin kein Roboter" bot wall, so it needs a one-time
-     manual solve: set `sources.immoscout.debug:true`, run, solve the challenge in the
-     window that opens; the session persists in `.is24-profile/` for later headless runs.
-     `method:"piloterr"` switches to the Piloterr API instead. ToS-sensitive — only listing
-     facts stored, no agent PII. See `tools/immo-agent/README.md` §ImmoScout24.
+   - `immoscout` — ImmoScout24 via a real browser (Playwright Chromium, no paid API).
+     IS24 has a "Ich bin kein Roboter" wall **and** detects headless mode, so it runs
+     **headful and on demand only**: `node src/index.mjs run --is24` from an interactive
+     terminal opens a visible window (solve the challenge if shown; the `.is24-profile/`
+     session usually skips it on repeat). Kept out of the automated headless job by design.
+     `method:"piloterr"` switches to the paid API. ToS-sensitive — only listing facts
+     stored, no agent PII. See `tools/immo-agent/README.md` §ImmoScout24.
 2. **Normalize & score** — €/m², gross yield (real cold rent or estimated from
    `rent_benchmark_eur_sqm`), and **discount to Verkehrswert** for auctions.
 3. **Store** — `tools/immo-agent/immo.json`, deduped by `source:id`. **Survivorship-safe**:

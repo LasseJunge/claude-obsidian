@@ -19,8 +19,14 @@ const SRC_LABEL = { immoscout: "immoscout", bank_auctions: "bank" };
 
 export const DB_PATH = join(ROOT, "immo.json");
 
-export async function runAgent({ configPath, dryRun = false } = {}) {
+export async function runAgent({ configPath, dryRun = false, is24 = false } = {}) {
   const cfg = loadConfig(configPath);
+  // `--is24`: force an on-demand, headful ImmoScout24 run (headless is blocked by
+  // IS24's fingerprint detection). Leaves the daily/headless job untouched.
+  if (is24) {
+    cfg.sources = cfg.sources || {};
+    cfg.sources.immoscout = { ...(cfg.sources.immoscout || {}), enabled: true, method: "browser", debug: true };
+  }
   const http = new Http(cfg);
   const store = new Store(DB_PATH);
   const now = new Date().toISOString();

@@ -2,6 +2,8 @@
 // CLI entry point.
 //
 //   node src/index.mjs run          full pipeline -> notes + dashboard
+//   node src/index.mjs run --is24   also include ImmoScout24 (opens a headful
+//                                    browser; solve the bot challenge if shown)
 //   node src/index.mjs run --dry    fetch + score, NO writes (safe test)
 //   node src/index.mjs top [N]      print top N stored matches
 //   node src/index.mjs dashboard    regenerate dashboard from stored data
@@ -16,7 +18,8 @@ const cmd = argv[0] || "run";
 async function main() {
   if (cmd === "run") {
     const dry = argv.includes("--dry") || argv.includes("--dry-run");
-    const summary = await runAgent({ dryRun: dry });
+    const is24 = argv.includes("--is24");
+    const summary = await runAgent({ dryRun: dry, is24 });
     console.log("\n" + JSON.stringify(summary, null, 2));
     return 0;
   }
@@ -44,7 +47,8 @@ async function main() {
 
   console.log(`Unknown command: ${cmd}
 Usage:
-  node src/index.mjs run [--dry]   run the pipeline
+  node src/index.mjs run [--dry]   run the pipeline (free sources, headless)
+  node src/index.mjs run --is24    include ImmoScout24 (headful; solve challenge)
   node src/index.mjs top [N]       list top matches
   node src/index.mjs dashboard     rebuild dashboard`);
   return 1;

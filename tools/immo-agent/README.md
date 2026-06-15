@@ -44,28 +44,31 @@ matched with OR), `property_types`, `price` (min/max), `yield` thresholds
 `rent_benchmark_eur_sqm` (for estimating yield on listings without a stated rent),
 and `sources.*.enabled`.
 
-### ImmoScout24 (headless browser) — first-run setup
+### ImmoScout24 (on-demand, headful) — `--is24`
 
-IS24 fronts everything with a bot wall ("Ich bin kein Roboter"), so plain headless
-access is always blocked. The working pattern is **solve once, reuse the session**:
+IS24 fronts everything with a bot wall ("Ich bin kein Roboter") **and** detects headless
+browsers by fingerprint, so it must run **headful** (a visible window). A headful solve
+persists a session in `.is24-profile/`, but headless runs are still re-challenged — so IS24
+is deliberately **kept out of the automated headless job** and run on demand instead.
 
 ```bash
 npm install playwright && npx playwright install chromium   # one time
+node src/index.mjs run --is24                               # opens a visible browser
 ```
 
-1. In `config.json`, set `sources.immoscout.enabled: true` and `debug: true`.
-2. Run `node src/index.mjs run`. A **visible Chrome window** opens on the IS24 search.
-   Solve the "Ich bin kein Roboter" challenge by hand (you have ~120s). The agent then
-   captures results automatically.
-3. The cleared session is saved in `.is24-profile/`. Set `debug: false` again — later
-   runs (including the nightly cron) reuse the cookies **headless** until they expire
-   (then just re-run once with `debug: true`).
+`--is24` forces ImmoScout24 on in headful mode for that run only (the saved `config.json`
+keeps it disabled, so the daily/scheduled job stays clean). If the challenge appears, solve
+it in the window (you have ~120s); the agent then captures listings and merges them into the
+same notes/dashboard as the other sources. Thanks to the persisted profile, repeat headful
+runs usually skip the challenge.
 
-> ⚠️ The parser targets IS24's own search-result JSON (`resultlist.resultlist`), captured
-> via network interception, with a DOM-card fallback. It's robust but **unverified against
-> live IS24 data** (the bot wall blocks automated testing). On your first successful solve,
-> check the listing count; if it passes the wall but returns 0, set `debug: true` and a
-> screenshot/console will show the actual shape to tune `extractEntries()`.
+> ⚠️ Must be run from an **interactive terminal on your desktop** — a headful browser cannot
+> launch from a non-interactive/service session.
+>
+> ⚠️ The parser targets IS24's own search-result JSON (`resultlist.resultlist`), captured via
+> network interception, with a DOM-card fallback. It's robust but **unverified against live
+> IS24 data**. If a run passes the wall but returns 0 listings, the response shape changed —
+> check the browser console to tune `extractEntries()` in `immoscout-browser.mjs`.
 
 **Alternative — Piloterr API** (paid, no browser): set `sources.immoscout.method: "piloterr"`
 and the key (never commit it):
