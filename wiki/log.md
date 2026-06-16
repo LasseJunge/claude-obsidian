@@ -19,6 +19,21 @@ Navigation: [[index]] | [[hot]] | [[overview]]
 
 Append-only. New entries go at the TOP. Never edit past entries.
 
+## [2026-06-16] save | PayPal Migration Dashboard Build
+- Type: session
+- Location: wiki/meta/2026-06-16-paypal-dashboard-build.md
+- From: built PayPal Migration tab in Spreedly_Conversion.html — version-upgrade KPIs, configurable gateway types, independent CSV upload, per-tab timestamps, TDZ bug fix
+
+## [2026-06-16] save | Vault Exploration and Ponytail Install
+- Type: session
+- Location: wiki/meta/2026-06-16-vault-exploration-and-ponytail-install.md
+- From: conversation exploring vault contents, skill inventory, Claude SEO use cases, ponytail plugin install
+
+## [2026-06-16] save | Vault Recovery + Skill Repair Playbook
+- Type: session
+- Location: wiki/meta/2026-06-16-vault-recovery-and-skill-repair.md
+- From: full vault recovery after .raw/ wipe + git clean; Obsidian IDB extraction; skill command repair; auto-commit safeguards
+
 ## [2026-06-15] save | immo-agent Build Session
 - Type: session
 - Location: wiki/meta/2026-06-15-immo-agent-build-session.md

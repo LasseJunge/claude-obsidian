@@ -30,6 +30,11 @@ Payment provider in the ePages stack. Per the [[meeting-2026-06-15-with-Chris|20
 - **Ask Karsten for the data** to establish an accurate tracking baseline.
 - Note from the meeting: **6 versions** exist, a **new version = more money**, and **472 deleted**.
 
+## Dashboard
+
+The PayPal Migration tab is now built inside [[epages-spreedly-migration-dashboard]]. It uses version-upgrade KPIs (Shutdown / Newest / Legacy / Sleeper / Total / Days remaining) rather than the binary Spreedly model. Gateway names must be configured by the admin once Karsten provides the data. See [[2026-06-16-paypal-dashboard-build]] for the full build notes and the TDZ bug that caused the tab to initially render empty.
+
 ## Sources
 
 - [[meeting-2026-06-15-with-Chris]]
+- [[2026-06-16-paypal-dashboard-build]]

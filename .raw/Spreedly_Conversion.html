@@ -27,6 +27,9 @@
   --ot:          #888780;
   --ot-bg:       #f4f4f4;
   --ot-bd:       #d0d0cc;
+  --pp:          #0070ba;
+  --pp-bg:       #f0f7ff;
+  --pp-bd:       #b3d4f5;
   --at:          #0891b2;
   --at-bg:       #ecfeff;
   --at-bd:       #a5f3fc;
@@ -45,7 +48,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
-body.auth-locked .admin-bar,body.auth-locked .header,body.auth-locked .nav-bar,body.auth-locked .main{display:none;}
+body.auth-locked .admin-bar,body.auth-locked .header,body.auth-locked .nav-bar,body.auth-locked .main,body.auth-locked .upload-strip{display:none;}
+.upload-strip{background:var(--surface);border-bottom:1px solid var(--border);padding:5px 2rem;font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;}
 .admin-bar{display:none;background:#111;padding:0 2rem;height:46px;align-items:center;justify-content:space-between;}
 .admin-bar.visible{display:flex;}
 .ab-l{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,.55);}
@@ -283,10 +287,13 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
     <i class="ti ti-shield-check" style="color:var(--ep-red)"></i>
     <strong>Admin Mode</strong>
     <span class="ab-sep">|</span>
-    <span>Changes will be saved directly to the server once live</span>
+    <span>Dashboard last modified: <strong id="ts-modified" style="color:rgba(255,255,255,.85)">–</strong></span>
   </div>
   <div class="ab-r">
     <button class="btn-ghost" id="btn-migration-import" style="display:none" onclick="triggerCSVUpload()"><i class="ti ti-upload"></i> <span>Import Spreedly CSV</span></button>
+    <button class="btn-ghost" id="btn-pp-import" style="display:none" onclick="triggerPayPalCSVUpload()"><i class="ti ti-upload"></i> <span>Import PayPal CSV</span></button>
+    <button class="btn-ghost" id="btn-pp-gateways" style="display:none" onclick="openPPGatewayModal()"><i class="ti ti-brand-paypal"></i> <span>PayPal Gateways</span></button>
+    <button class="btn-ghost danger" id="btn-pp-clear" style="display:none" onclick="openConfirmClearPP()"><i class="ti ti-trash"></i> <span>Clear PayPal Data</span></button>
     <button class="btn-ghost" id="btn-at-import" style="display:none" onclick="atTriggerImport()"><i class="ti ti-language"></i> <span>Import AT CSV</span></button>
     <button class="btn-ghost danger" id="btn-at-clear" style="display:none" onclick="openConfirmClearAT()"><i class="ti ti-trash"></i> <span>Clear AT Data</span></button>
     <button class="btn-ghost" onclick="openDateModal()"><i class="ti ti-calendar-event"></i> <span>Date Settings</span></button>
@@ -318,6 +325,12 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
     </button>
   </div>
 </header>
+
+<!-- Upload timestamp strip -->
+<div class="upload-strip">
+  <i class="ti ti-cloud-upload" style="font-size:13px"></i>
+  <span id="ts-upload-lbl">Shop data last uploaded:</span> <strong id="ts-upload" style="color:var(--text2)">–</strong>
+</div>
 
 <!-- Nav -->
 <nav class="nav-bar" id="main-nav">
@@ -536,7 +549,162 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 </div>
 </div>
 <!-- PAGE: PAYPAL -->
-<div class="page" id="page-paypal"><div class="main"><div class="placeholder"><span class="coming">Coming Soon</span><i class="ti ti-brand-paypal"></i><h2>PayPal Migration</h2><p>Overview and progress of the PayPal migration.</p></div></div></div>
+<div class="page" id="page-paypal">
+<div id="pp-no-data" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:2rem;">
+  <i class="ti ti-file-upload" style="font-size:48px;color:var(--border2);margin-bottom:16px"></i>
+  <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text2);margin-bottom:8px">No data loaded</h2>
+  <p style="font-size:13px;color:var(--text3);max-width:320px;margin-bottom:20px">Log in as Admin and import the PayPal CSV to get started.</p>
+  <button onclick="triggerPayPalCSVUpload()" style="background:var(--pp);color:#fff;border:none;border-radius:var(--r-sm);padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ti ti-upload"></i> Import PayPal CSV</button>
+</div>
+<div id="pp-content" style="display:none">
+<div class="main">
+
+  <div id="pp-gateway-notice" style="display:none;align-items:center;gap:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:10px 16px;margin-bottom:1.5rem;">
+    <i class="ti ti-info-circle" style="font-size:15px;color:#d97706;flex-shrink:0;"></i>
+    <span style="font-size:13px;color:#92400e;font-weight:500;">No PayPal gateways configured — showing all Base shops with "paypal" in their payment field. Log in as Admin and use <strong>PayPal Gateways</strong> to enable version tracking.</span>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom:1.75rem;">
+    <div class="kpi" style="border-color:var(--ep-red-bd);background:var(--ep-red-bg)">
+      <div class="kpi-lbl" style="color:var(--ep-red)"><i class="ti ti-alert-triangle" style="font-size:12px"></i> On Shutdown Versions</div>
+      <div class="kpi-val" id="pp-k-shut" style="color:var(--ep-red)">–</div>
+      <div class="kpi-sub" id="pp-k-shut-sub">must migrate before deadline</div>
+    </div>
+    <div class="kpi" style="border-color:#bbf7d0;background:#f0fdf4">
+      <div class="kpi-lbl" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span> On Newest Version</div>
+      <div class="kpi-val" id="pp-k-new" style="color:var(--ok)">–</div>
+      <div class="kpi-sub" id="pp-k-new-sub">– % of active shops</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl" style="color:var(--warn)"><i class="ti ti-history" style="font-size:12px"></i> Other Legacy Versions</div>
+      <div class="kpi-val" id="pp-k-leg" style="color:var(--warn)">–</div>
+      <div class="kpi-sub">not shutdown, not newest</div>
+    </div>
+    <div class="kpi sleeper">
+      <div class="kpi-lbl"><span class="dot sl"></span> Sleeper</div>
+      <div class="kpi-val" id="pp-k-sl">–</div>
+      <div class="kpi-sub">6+ months inactive</div>
+    </div>
+    <div class="kpi" style="border-color:var(--pp-bd);background:var(--pp-bg)">
+      <div class="kpi-lbl" style="color:var(--pp)"><i class="ti ti-brand-paypal" style="font-size:12px"></i> Total PayPal (Base)</div>
+      <div class="kpi-val" id="pp-k-tot" style="color:var(--pp)">–</div>
+      <div class="kpi-sub">Base shops on any PayPal</div>
+    </div>
+    <div class="kpi days">
+      <div class="kpi-lbl"><i class="ti ti-calendar-due" style="font-size:12px"></i> Days Remaining</div>
+      <div class="kpi-val" id="pp-k-days">–</div>
+      <div class="kpi-sub">until PayPal deadline</div>
+    </div>
+  </div>
+
+  <div class="sleeper-note" id="pp-sleeper-note" style="display:none">
+    <i class="ti ti-info-circle"></i>
+    <span id="pp-sleeper-note-text"></span>
+  </div>
+
+  <div class="prog-card" style="margin-bottom:1.75rem;">
+    <div class="prog-head">
+      <div>
+        <h2>Migration to Newest PayPal</h2>
+        <p>Active Base shops that have moved to the newest PayPal version</p>
+      </div>
+      <div class="prog-dates" id="pp-prog-dates"></div>
+    </div>
+    <div class="prog-track" style="background:var(--pp-bg);border-color:var(--pp-bd);">
+      <div class="prog-fill" id="pp-prog-fill" style="width:0%"></div>
+    </div>
+    <div class="prog-lbls">
+      <span><strong id="pp-p-new">0</strong> on newest</span>
+      <span class="pct" id="pp-p-pct">0%</span>
+      <span><strong id="pp-p-tot">0</strong> active shops</span>
+    </div>
+    <div class="time-row">
+      <div class="time-lbls">
+        <span>Time progress until deadline</span>
+        <span id="pp-time-pct-lbl">0%</span>
+      </div>
+      <div class="time-track"><div class="time-fill ok" id="pp-time-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Version Distribution</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-chart-bar" style="font-size:14px;color:var(--text2)"></i> By PayPal Gateway Version</div>
+      <span class="bd-cnt" id="pp-version-cnt"></span>
+    </div>
+    <div id="pp-version-body" style="padding:.4rem 1.2rem;"></div>
+  </div>
+
+  <div class="sec-lbl">Breakdown</div>
+  <div class="bd-grid" style="margin-bottom:1.75rem;">
+    <div class="bd-card">
+      <div class="bd-hd">
+        <div class="bd-title"><i class="ti ti-users" style="font-size:14px;color:var(--text2)"></i> By Partner (% on Newest)</div>
+        <span class="bd-cnt" id="pp-partner-cnt"></span>
+      </div>
+      <div class="bd-body" id="pp-partner-bd"></div>
+    </div>
+    <div class="bd-card">
+      <div class="bd-hd">
+        <div class="bd-title"><i class="ti ti-alert-triangle" style="font-size:14px;color:var(--ep-red)"></i> Shutdown-Version Shops by Partner</div>
+        <span class="bd-cnt" id="pp-shut-cnt"></span>
+      </div>
+      <div class="bd-body" id="pp-shut-bd"></div>
+    </div>
+  </div>
+
+  <div class="search-card">
+    <div class="search-hd">
+      <div class="search-top">
+        <div class="search-ttl">Shop Search</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="chip active" id="pp-chip-all" onclick="ppToggleFilter(this,'all')">All</span>
+          <span class="chip" id="pp-chip-shut" onclick="ppToggleFilter(this,'shutdown')" style="color:var(--ep-red);border-color:var(--ep-red-bd)"><span class="dot" style="background:var(--ep-red)"></span> Shutdown</span>
+          <span class="chip" id="pp-chip-new" onclick="ppToggleFilter(this,'newest')"><span class="dot" style="background:var(--ok)"></span> Newest</span>
+          <span class="chip" id="pp-chip-leg" onclick="ppToggleFilter(this,'legacy')"><span class="dot" style="background:var(--warn)"></span> Legacy</span>
+          <span class="chip sl-chip" onclick="ppToggleFilter(this,'sleeper')"><span class="dot sl"></span> Sleeper</span>
+        </div>
+      </div>
+      <div class="sw-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" class="s-input" id="pp-si" placeholder="Search by name, domain, partner, gateway …" oninput="ppOnSearch()">
+      </div>
+    </div>
+    <div class="search-info" id="pp-search-info"></div>
+    <div id="pp-search-body">
+      <div class="search-empty">
+        <i class="ti ti-search"></i>
+        <p>Enter a search term to find shops.</p>
+        <p style="margin-top:4px;font-size:12px;color:var(--text3)">Minimum 2 characters · 50 results per page</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- PayPal Gateway Modal -->
+<div class="backdrop" id="pp-gateway-modal">
+  <div class="modal" style="width:min(620px,92vw)">
+    <div class="modal-ttl"><i class="ti ti-brand-paypal" style="color:var(--pp)"></i> PayPal Gateway Configuration</div>
+    <p class="modal-hint">Map payment field values to gateway types. Use substring matching — e.g. entering "paypal_v2" matches any payment value containing that string. Classify as <strong>Shutdown</strong> (discontinued 01.01.27), <strong>Newest</strong> (target — highest revenue), or <strong>Legacy</strong> (active but not newest).</p>
+    <div class="f2" style="margin-bottom:13px;">
+      <div class="fg"><label>Migration Start Date</label><input type="date" id="pp-d-start"></div>
+      <div class="fg"><label>Deadline</label><input type="date" id="pp-d-end"></div>
+    </div>
+    <table class="map-table">
+      <thead><tr><th>Payment Field Value (substring match)</th><th>Type</th><th></th></tr></thead>
+      <tbody id="pp-gateway-body"></tbody>
+    </table>
+    <button class="add-row" onclick="ppAddGatewayRow()"><i class="ti ti-plus"></i> Add gateway</button>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="ppSaveGateways()"><i class="ti ti-check"></i> Save</button>
+      <button class="btn-cancel" onclick="closeModal('pp-gateway-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
 <!-- PAGE: AUTOTRANSLATE -->
 <div class="page" id="page-autotranslate">
 <div id="at-empty" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:2rem;">
@@ -702,6 +870,22 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 
 <!-- Confirm
 
+<!-- Confirm Clear PayPal Data Modal -->
+<div class="backdrop" id="confirm-pp-modal">
+  <div class="confirm-box">
+    <div class="modal-ttl"><i class="ti ti-alert-triangle"></i> Clear PayPal data?</div>
+    <div class="confirm-body">
+      This will permanently delete <strong>all PayPal shop data</strong> and reset the <strong>baseline</strong>.<br><br>
+      All other dashboard data will <strong>not</strong> be affected.<br><br>
+      <strong>This cannot be undone.</strong> Are you sure?
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="clearPayPalData()" style="background:#dc2626;"><i class="ti ti-trash"></i> Yes, clear PayPal data</button>
+      <button class="btn-cancel" onclick="closeModal('confirm-pp-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm Clear AT Data Modal -->
 <div class="backdrop" id="confirm-at-modal">
   <div class="confirm-box">
@@ -772,6 +956,18 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 
 <script>
 const ADMIN_PW = 'epAdmin-2026!K9vT4sR2';
+let tsData = {spreedlyUpload:'', atUpload:'', ppUpload:'', lastModified:''};
+function fmtTS(iso){ if(!iso)return'–'; const d=new Date(iso); return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function renderTimestamps(){ document.getElementById('ts-modified').textContent=fmtTS(tsData.lastModified); }
+function updateUploadStrip(tabName){
+  const lbl=document.getElementById('ts-upload-lbl');
+  const val=document.getElementById('ts-upload');
+  if(tabName==='autotranslate'){ lbl.textContent='AutoTranslate data last uploaded:'; val.textContent=fmtTS(tsData.atUpload); }
+  else if(tabName==='paypal'){ lbl.textContent='PayPal data last uploaded:'; val.textContent=fmtTS(tsData.ppUpload); }
+  else { lbl.textContent='Shop data last uploaded:'; val.textContent=fmtTS(tsData.spreedlyUpload); }
+}
+async function dbStampUpload(type){ if(type==='at') tsData.atUpload=new Date().toISOString(); else if(type==='pp') tsData.ppUpload=new Date().toISOString(); else tsData.spreedlyUpload=new Date().toISOString(); await sb.from('mappings').upsert({id:'timestamps',data:tsData}); }
+async function dbStampModified(){ tsData.lastModified=new Date().toISOString(); await sb.from('mappings').upsert({id:'timestamps',data:tsData}); renderTimestamps(); }
 const TODAY = new Date();
 const SLEEPER_YEAR = 2026;
 
@@ -887,7 +1083,15 @@ async function dbLoadAll(){
     if(bsl) baselineShops = bsl.data||[];
     const atm = maps.find(m=>m.id==='autotranslate');
     if(atm) atData = atm.data||[];
+    const ppc = maps.find(m=>m.id==='paypal_config');
+    if(ppc) ppConfig = ppc.data||ppConfig;
+    const ppbl = maps.find(m=>m.id==='paypal_baseline');
+    if(ppbl) ppBaseline = ppbl.data;
+    const tsd = maps.find(m=>m.id==='timestamps');
+    if(tsd) tsData = {...tsData,...(tsd.data||{})};
   }
+  const ppCsvText = await dbLoadPayPalCSV();
+  if(ppCsvText){ const parsed=parseCSVAuto(ppCsvText); if(parsed.length) ppShops=parsed; }
 
   // shops – load from Storage
   const csvText = await dbLoadCSV();
@@ -1026,6 +1230,8 @@ function showPage(name,el){
   document.getElementById('deadline-pill').style.display=name==='migration'?'':'none';
   if(name==='churn') initChurnCharts();
   if(name==='autotranslate') atRefresh();
+  if(name==='paypal') ppRefresh();
+  updateUploadStrip(name);
   if(isAdmin) syncAdminButtons();
 }
 
@@ -1336,6 +1542,9 @@ function syncAdminButtons(){
   document.getElementById('btn-migration-import').style.display=name==='migration'?'':'none';
   document.getElementById('btn-at-import').style.display=name==='autotranslate'?'':'none';
   document.getElementById('btn-at-clear').style.display=name==='autotranslate'?'':'none';
+  document.getElementById('btn-pp-import').style.display=name==='paypal'?'':'none';
+  document.getElementById('btn-pp-gateways').style.display=name==='paypal'?'':'none';
+  document.getElementById('btn-pp-clear').style.display=name==='paypal'?'':'none';
 }
 function checkLogin(){
   if(document.getElementById('pw').value===ADMIN_PW){
@@ -1356,7 +1565,7 @@ function exitAdminMode(silent=false){
   document.getElementById('admin-bar').classList.remove('visible');
   document.getElementById('admin-btn').innerHTML='<i class="ti ti-lock"></i> Admin';
   document.querySelectorAll('.admin-tab').forEach(t=>t.style.display='none');
-  ['btn-migration-import','btn-at-import','btn-at-clear'].forEach(id=>{
+  ['btn-migration-import','btn-at-import','btn-at-clear','btn-pp-import','btn-pp-gateways','btn-pp-clear'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   const activePage=document.querySelector('.page.active');
@@ -1377,7 +1586,7 @@ async function saveDates(){
   if(!s||!e){alert('Please fill in both dates.');return;}
   if(new Date(e)<=new Date(s)){alert('End date must be after start date.');return;}
   config={startDate:s,endDate:e};
-  await dbSaveConfig();
+  await dbSaveConfig(); await dbStampModified();
   closeModal('date-modal'); refresh(); toast('Date settings saved');
 }
 
@@ -1395,7 +1604,7 @@ function renderMappingTable(){
 function getPartners(){ return [...new Set(shops.map(s=>s.partner).filter(Boolean))].sort(); }
 function addMappingRow(){ const p=getPartners(); mapping.push({partner:p[0]||'',partnerName:'',size:'M'}); renderMappingTable(); }
 function deleteMapping(i){ mapping.splice(i,1); renderMappingTable(); }
-async function saveMapping(){ await dbSaveMapping(); closeModal('mapping-modal'); refresh(); doSearch(); toast('Package mapping saved'); }
+async function saveMapping(){ await dbSaveMapping(); await dbStampModified(); closeModal('mapping-modal'); refresh(); doSearch(); toast('Package mapping saved'); }
 
 
 
@@ -1425,6 +1634,7 @@ function triggerCSVUpload(){
         toast(fmt(parsed.length)+' shops updated from CSV');
       }
       await dbSaveCSV(rawText);
+      await dbStampUpload('spreedly'); await dbStampModified();
       refresh(); doSearch(); renderDataFieldsBaseline();
     };
     reader.readAsText(file);
@@ -1442,7 +1652,7 @@ function openConfirmClearAT(){
 async function clearATData(){
   atData=[];
   await dbSaveAT();
-  closeModal('confirm-at-modal');
+  await dbStampModified(); closeModal('confirm-at-modal');
   atRefresh();
   toast('AutoTranslate data cleared');
 }
@@ -1454,7 +1664,7 @@ async function clearData(){
   await dbClearShops();
   await dbSavePartnerBaseline();
   await dbSaveBaselineShops();
-  closeModal('confirm-modal');
+  await dbStampModified(); closeModal('confirm-modal');
   refresh();
   renderDataFieldsBaseline();
   toast('All data cleared');
@@ -1481,7 +1691,7 @@ function deleteShowtypeRow(i){ showtypeMapping.splice(i,1); renderShowtypeMappin
 async function saveShowtypeMapping(){
   await dbSaveShowtypeMapping();
   shops.forEach(s=>{ s.software=resolveShoptype(s.shoptype||''); });
-  closeModal('shoptype-modal');
+  await dbStampModified(); closeModal('shoptype-modal');
   refresh(); doSearch(); toast('Shop type mapping saved');
 }
 
@@ -1513,7 +1723,7 @@ async function resetBaseline(){
 
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-['date-modal','mapping-modal','shoptype-modal','confirm-modal','confirm-at-modal'].forEach(id=>{
+['date-modal','mapping-modal','shoptype-modal','confirm-modal','confirm-at-modal','confirm-pp-modal','pp-gateway-modal'].forEach(id=>{
   const el=document.getElementById(id);
   if(el)el.addEventListener('click',function(e){ if(e.target===this)this.classList.remove('open'); });
 });
@@ -1620,6 +1830,7 @@ function atTriggerImport(){
       }
       atData.sort((a,b)=>a.week<b.week?-1:a.week>b.week?1:0);
       await dbSaveAT();
+      await dbStampUpload('at'); await dbStampModified();
       atRefresh();
       toast(`${rows.length} rows imported · ${week}`);
     };
@@ -2465,6 +2676,330 @@ function resetChurnFilter(){
   renderAllBreakdowns();
 }
 
+// ── PayPal ────────────────────────────────────────────────────
+let ppConfig = { gateways: [], startDate: '', deadline: '2027-01-01' };
+let ppShops = [];
+let ppBaseline = null;
+
+async function dbSavePayPalCSV(rawText){
+  if(!currentUser||!isAdmin) return;
+  const blob=new Blob([rawText],{type:'text/csv'});
+  const {error}=await sb.storage.from('csv-imports').upload('paypal.csv',blob,{upsert:true});
+  if(error){console.error('dbSavePayPalCSV:',error);toast('Error saving PayPal CSV: '+error.message);}
+}
+async function dbLoadPayPalCSV(){
+  if(!currentUser) return null;
+  const {data,error}=await sb.storage.from('csv-imports').download('paypal.csv');
+  if(error) return null;
+  return await data.text();
+}
+async function dbClearPayPalData(){
+  if(!currentUser||!isAdmin) return;
+  await sb.storage.from('csv-imports').remove(['paypal.csv']);
+  await sb.from('mappings').delete().eq('id','paypal_baseline');
+}
+async function dbSavePayPalBaseline(){
+  if(!currentUser||!isAdmin) return;
+  if(ppBaseline) await sb.from('mappings').upsert({id:'paypal_baseline',data:ppBaseline});
+  else await sb.from('mappings').delete().eq('id','paypal_baseline');
+}
+
+function triggerPayPalCSVUpload(){
+  if(!isAdmin){toast('Admin mode required');return;}
+  const input=document.createElement('input');
+  input.type='file';input.accept='.csv';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async ev=>{
+      const rawText=ev.target.result;
+      const parsed=parseCSVAuto(rawText);
+      if(!parsed.length){alert('No valid data found in file. Please check the CSV format.');return;}
+      ppShops.splice(0,ppShops.length,...parsed);
+      if(!ppBaseline){
+        ppBaseline={count:parsed.length,date:new Date().toISOString()};
+        await dbSavePayPalBaseline();
+      }
+      await dbSavePayPalCSV(rawText);
+      await dbStampUpload('pp'); await dbStampModified();
+      updateUploadStrip('paypal');
+      ppRefresh();
+      toast(fmt(parsed.length)+' PayPal shops imported');
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function openConfirmClearPP(){ document.getElementById('confirm-pp-modal').classList.add('open'); }
+async function clearPayPalData(){
+  ppShops.splice(0,ppShops.length);
+  ppBaseline=null;
+  await dbClearPayPalData();
+  await dbStampModified();
+  closeModal('confirm-pp-modal');
+  ppRefresh();
+  toast('PayPal data cleared');
+}
+let ppActiveFilters = new Set(['all']);
+let ppCurrentPage = 1, ppLastResults = [], ppSortCol = null, ppSortDir = 'asc', ppSearchTimer = null;
+const PP_PAGE_SIZE = 50;
+
+async function dbSavePayPalConfig(){
+  if(!currentUser||!isAdmin) return;
+  await sb.from('mappings').upsert({id:'paypal_config', data:ppConfig});
+}
+
+function ppGetGatewayInfo(s){
+  const p=(s.payment||'').toLowerCase();
+  for(const gw of ppConfig.gateways){ if(gw.name && p.includes(gw.name.toLowerCase())) return gw; }
+  return null;
+}
+function ppIsPayPalShop(s){
+  if(ppConfig.gateways.length) return ppGetGatewayInfo(s)!==null;
+  return (s.payment||'').toLowerCase().includes('paypal');
+}
+function ppGetGatewayType(s){
+  const gw=ppGetGatewayInfo(s); if(gw) return gw.type;
+  if((s.payment||'').toLowerCase().includes('paypal')) return 'unknown';
+  return null;
+}
+function ppDetectShops(){
+  if(!ppConfig.gateways.length) return ppShops;
+  return ppShops.filter(s=>ppGetGatewayInfo(s)!==null||((s.payment||'').toLowerCase().includes('paypal')));
+}
+
+function ppRefresh(){
+  const ppShops=ppDetectShops();
+  if(!ppShops.length){
+    document.getElementById('pp-no-data').style.display='flex';
+    document.getElementById('pp-content').style.display='none';
+    return;
+  }
+  document.getElementById('pp-no-data').style.display='none';
+  document.getElementById('pp-content').style.display='block';
+
+  const hasGw=ppConfig.gateways.length>0;
+  document.getElementById('pp-gateway-notice').style.display=hasGw?'none':'flex';
+  const shutShops=ppShops.filter(s=>ppGetGatewayType(s)==='shutdown');
+  const newShops =ppShops.filter(s=>ppGetGatewayType(s)==='newest');
+  const legShops =ppShops.filter(s=>ppGetGatewayType(s)==='legacy');
+  const slShops  =ppShops.filter(isSlpr);
+  const active   =ppShops.filter(s=>!isSlpr(s));
+  const newActive=newShops.filter(s=>!isSlpr(s));
+
+  const deadline=new Date(ppConfig.deadline||'2027-01-01');
+  const start=ppConfig.startDate?new Date(ppConfig.startDate):null;
+  const days=daysB(TODAY,deadline);
+
+  document.getElementById('pp-k-shut').textContent=fmt(shutShops.length);
+  document.getElementById('pp-k-shut-sub').textContent=shutShops.length>0?'must migrate before deadline':'none on shutdown versions';
+  document.getElementById('pp-k-new').textContent=fmt(newShops.length);
+  document.getElementById('pp-k-new-sub').textContent=active.length>0?Math.round((newActive.length/active.length)*100)+'% of active shops':'–';
+  document.getElementById('pp-k-leg').textContent=fmt(legShops.length);
+  document.getElementById('pp-k-sl').textContent=fmt(slShops.length);
+  document.getElementById('pp-k-tot').textContent=fmt(ppShops.length);
+  document.getElementById('pp-k-days').textContent=fmt(Math.max(0,days));
+
+  const slNote=document.getElementById('pp-sleeper-note');
+  if(slShops.length){
+    slNote.style.display='flex';
+    document.getElementById('pp-sleeper-note-text').innerHTML='<strong>'+fmt(slShops.length)+' sleeper shops</strong> (last login before '+SLEEPER_YEAR+') are unlikely to migrate – 100% may not be reached.';
+  } else { slNote.style.display='none'; }
+
+  const pct=active.length>0?Math.round((newActive.length/active.length)*100):0;
+  document.getElementById('pp-prog-fill').style.width=pct+'%';
+  document.getElementById('pp-p-new').textContent=fmt(newActive.length);
+  document.getElementById('pp-p-tot').textContent=fmt(active.length);
+  document.getElementById('pp-p-pct').textContent=pct+'%';
+
+  if(start){
+    const totalD=daysB(start,deadline), elapsed=daysB(start,TODAY);
+    const tPct=Math.min(100,Math.max(0,Math.round((elapsed/totalD)*100)));
+    const tf=document.getElementById('pp-time-fill');
+    tf.style.width=tPct+'%'; tf.className='time-fill '+(tPct<50?'ok':tPct<80?'warn':'hot');
+    document.getElementById('pp-time-pct-lbl').textContent=tPct+'% of time used';
+    document.getElementById('pp-prog-dates').innerHTML='Start: <strong>'+fmtDo(start)+'</strong><br>Deadline: <strong>'+fmtDo(deadline)+'</strong>';
+  } else {
+    document.getElementById('pp-prog-dates').innerHTML='Deadline: <strong>'+fmtDo(deadline)+'</strong>';
+  }
+
+  ppRenderVersionBreakdown(ppShops,hasGw);
+  ppRenderPartnerBreakdown(ppShops);
+  ppDoSearch();
+}
+
+function ppRenderVersionBreakdown(ppShops,hasGw){
+  const body=document.getElementById('pp-version-body');
+  const cnt=document.getElementById('pp-version-cnt');
+  if(!ppShops.length){
+    body.innerHTML='<div style="padding:1.2rem;color:var(--text3);font-size:13px;text-align:center;">No PayPal Base shops found in current data.</div>';
+    cnt.textContent=''; return;
+  }
+  const TYPE_COLOR={shutdown:'var(--ep-red)',newest:'var(--ok)',legacy:'var(--warn)',unknown:'var(--text3)'};
+  const TYPE_LABEL={shutdown:'Shutdown',newest:'Newest',legacy:'Legacy',unknown:'Unclassified'};
+  let groups;
+  if(hasGw){
+    const gm={};
+    ppConfig.gateways.forEach(gw=>{ gm[gw.name]={type:gw.type,count:0}; });
+    ppShops.forEach(s=>{ const gw=ppGetGatewayInfo(s); if(gw)gm[gw.name].count++; });
+    groups=Object.entries(gm).filter(([,v])=>v.count>0).sort((a,b)=>b[1].count-a[1].count);
+  } else {
+    const pm={};
+    ppShops.forEach(s=>{ const k=s.payment||'(unknown)'; pm[k]=(pm[k]||0)+1; });
+    groups=Object.entries(pm).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,{type:'unknown',count:v}]);
+  }
+  const total=ppShops.length;
+  cnt.textContent=groups.length+' version'+(groups.length!==1?'s':'');
+  body.innerHTML=groups.map(([name,{type,count}])=>{
+    const pct=Math.round((count/total)*100);
+    const col=TYPE_COLOR[type]||'var(--text3)';
+    const lbl=TYPE_LABEL[type]||type;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="min-width:180px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${name}">${name}</div>
+      <span style="font-size:11px;padding:2px 9px;border-radius:100px;border:1px solid;white-space:nowrap;min-width:82px;text-align:center;background:${col}18;color:${col};border-color:${col}40;">${lbl}</span>
+      <div style="flex:1;height:8px;background:var(--surface2);border-radius:100px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${col};border-radius:100px;"></div></div>
+      <div style="font-size:12px;white-space:nowrap;min-width:90px;text-align:right;"><span style="font-family:'Syne',sans-serif;font-weight:700;color:${col}">${pct}%</span> <span style="color:var(--text3)">·</span> ${fmt(count)}</div>
+    </div>`;
+  }).join('')+'<div style="padding-top:4px;"></div>';
+}
+
+function ppRenderPartnerBreakdown(ppShops){
+  const pm={}, sm={};
+  ppShops.forEach(s=>{
+    const k=s.partner||'(no partner)';
+    if(!pm[k])pm[k]={total:0,newest:0};
+    pm[k].total++; if(ppGetGatewayType(s)==='newest')pm[k].newest++;
+    if(ppGetGatewayType(s)==='shutdown'){ sm[k]=(sm[k]||0)+1; }
+  });
+  const ps=Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('pp-partner-cnt').textContent=ps.length+' partners';
+  document.getElementById('pp-partner-bd').innerHTML=ps.map(([n,d])=>{
+    const p=d.total>0?Math.round((d.newest/d.total)*100):0;
+    return`<div class="bd-row">
+      <div class="bd-name" title="${n}">${n}</div>
+      <div class="bd-bar-wrap"><div class="bd-bar" style="width:${p}%;background:var(--ok)"></div></div>
+      <div class="bd-nums"><span class="pct" style="color:var(--ok)">${p}%</span> <span style="color:var(--text3)">newest / ${fmt(d.total)}</span></div>
+    </div>`;
+  }).join('');
+  const ss=Object.entries(sm).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('pp-shut-cnt').textContent=ss.length+' partners affected';
+  document.getElementById('pp-shut-bd').innerHTML=ss.length?ss.map(([n,c])=>{
+    const pct=Math.round((c/ss[0][1])*100);
+    return`<div class="bd-row">
+      <div class="bd-name" title="${n}">${n}</div>
+      <div class="bd-bar-wrap"><div class="bd-bar" style="width:${pct}%;background:var(--ep-red)"></div></div>
+      <div class="bd-nums"><span class="pct" style="color:var(--ep-red)">${fmt(c)}</span> <span style="color:var(--text3)">shops</span></div>
+    </div>`;
+  }).join(''):'<div style="padding:1rem 0;color:var(--text3);font-size:13px;text-align:center;">No shutdown-version shops found.</div>';
+}
+
+function ppOnSearch(){ clearTimeout(ppSearchTimer); ppSearchTimer=setTimeout(()=>{ppCurrentPage=1;ppDoSearch();},200); }
+
+function ppToggleFilter(el,val){
+  if(val==='all'){
+    ppActiveFilters=new Set(['all']);
+    document.querySelectorAll('#page-paypal .chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+  } else {
+    ppActiveFilters.delete('all');
+    document.getElementById('pp-chip-all').classList.remove('active');
+    if(ppActiveFilters.has(val)){ppActiveFilters.delete(val);el.classList.remove('active');}
+    else{ppActiveFilters.add(val);el.classList.add('active');}
+    if(!ppActiveFilters.size){ppActiveFilters.add('all');document.getElementById('pp-chip-all').classList.add('active');}
+  }
+  ppCurrentPage=1; ppDoSearch();
+}
+
+function ppMatchesFilter(s){
+  if(ppActiveFilters.has('all')) return true;
+  const t=ppGetGatewayType(s);
+  if(ppActiveFilters.has('shutdown')&&t==='shutdown') return true;
+  if(ppActiveFilters.has('newest')  &&t==='newest')   return true;
+  if(ppActiveFilters.has('legacy')  &&t==='legacy')   return true;
+  if(ppActiveFilters.has('sleeper') &&isSlpr(s))       return true;
+  return false;
+}
+
+function ppDoSearch(){
+  const q=document.getElementById('pp-si').value.trim().toLowerCase();
+  const ppShops=ppDetectShops();
+  if(q.length<2){
+    document.getElementById('pp-search-info').style.display='none';
+    document.getElementById('pp-search-body').innerHTML=`<div class="search-empty"><i class="ti ti-search"></i><p>Enter a search term to find shops.</p><p style="margin-top:4px;font-size:12px;color:var(--text3)">Minimum 2 characters · 50 results per page</p></div>`;
+    return;
+  }
+  let res=ppShops.filter(s=>{
+    if(!ppMatchesFilter(s)) return false;
+    return (s.name||'').toLowerCase().includes(q)||(s.partner||'').toLowerCase().includes(q)
+      ||(s.domain||'').toLowerCase().includes(q)||(s.alias||'').toLowerCase().includes(q)
+      ||(s.payment||'').toLowerCase().includes(q)||(s.lastlogin?String(s.lastlogin):'').includes(q)
+      ||(isSlpr(s)&&'sleeper'.includes(q));
+  });
+  if(ppSortCol){ res=[...res].sort((a,b)=>{ let av=a[ppSortCol]||'',bv=b[ppSortCol]||''; const r=av<bv?-1:av>bv?1:0; return ppSortDir==='asc'?r:-r; }); }
+  ppLastResults=res;
+  const totalPages=Math.max(1,Math.ceil(res.length/PP_PAGE_SIZE));
+  if(ppCurrentPage>totalPages)ppCurrentPage=totalPages;
+  const shown=res.slice((ppCurrentPage-1)*PP_PAGE_SIZE,ppCurrentPage*PP_PAGE_SIZE);
+  const info=document.getElementById('pp-search-info');
+  info.style.display='block';
+  info.textContent=res.length===0?'No shops found.':fmt(res.length)+' results'+(res.length>PP_PAGE_SIZE?' – page '+ppCurrentPage+' of '+totalPages:'');
+  if(!res.length){document.getElementById('pp-search-body').innerHTML=`<div class="search-empty"><i class="ti ti-mood-empty"></i><p>No shops found for "${q}".</p></div>`;return;}
+  const TYPE_BADGE={
+    shutdown:`<span class="badge" style="background:var(--ep-red-bg);color:var(--ep-red);border-color:var(--ep-red-bd)"><i class="ti ti-alert-triangle" style="font-size:10px"></i> Shutdown</span>`,
+    newest:  `<span class="badge" style="background:#f0fdf4;color:var(--ok);border-color:#bbf7d0"><span class="dot" style="background:var(--ok)"></span> Newest</span>`,
+    legacy:  `<span class="badge" style="background:#fffbeb;color:var(--warn);border-color:#fde68a">Legacy</span>`,
+    unknown: `<span class="badge ot">PayPal</span>`,
+  };
+  const cols=[{key:'name',label:'Name'},{key:'partner',label:'Partner'},{key:'domain',label:'Domain'},{key:'payment',label:'Gateway'},{key:'lastlogin',label:'Last Login'}];
+  const ths=cols.map(c=>{const s=ppSortCol===c.key;return`<th class="sortable${s?' sort-'+ppSortDir:''}" onclick="ppSortBy('${c.key}')">${c.label}<span class="sort-icon"></span></th>`;}).join('');
+  const rows=shown.map(s=>{
+    const sl=isSlpr(s), t=ppGetGatewayType(s)||'unknown';
+    const slB=sl?` <span class="badge sl"><i class="ti ti-moon" style="font-size:10px"></i> Sleeper</span>`:'';
+    const dom=s.domain?`<a href="https://${s.domain}" target="_blank" class="domain">${s.domain}</a>`:`<span style="color:var(--text3)">–</span>`;
+    return`<tr class="${sl?'is-sleeper':''}">
+      <td><div style="font-weight:500">${s.name||s.alias}${slB}</div></td>
+      <td>${s.partner||'–'}</td>
+      <td>${dom}</td>
+      <td>${TYPE_BADGE[t]||TYPE_BADGE.unknown} <span style="font-size:11px;color:var(--text3);margin-left:4px">${s.payment||'–'}</span></td>
+      <td style="font-size:12px;color:${sl?'var(--sl)':'var(--text2)'}">${s.lastlogin||'–'}</td>
+    </tr>`;
+  }).join('');
+  const pag=totalPages>1?`<div class="pagination"><span>${fmt((ppCurrentPage-1)*PP_PAGE_SIZE+1)}–${fmt(Math.min(ppCurrentPage*PP_PAGE_SIZE,ppLastResults.length))} of ${fmt(ppLastResults.length)}</span><div class="pag-btns"><button class="pag-btn" onclick="ppGoPage(${ppCurrentPage-1})" ${ppCurrentPage===1?'disabled':''}>&#8249;</button>${(()=>{const pages=[];for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||Math.abs(i-ppCurrentPage)<=2)pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}return pages.map(p=>p==='…'?`<span class="pag-btn" style="cursor:default;border:none;background:none">…</span>`:`<button class="pag-btn${p===ppCurrentPage?' active':''}" onclick="ppGoPage(${p})">${p}</button>`).join('');})()}<button class="pag-btn" onclick="ppGoPage(${ppCurrentPage+1})" ${ppCurrentPage===totalPages?'disabled':''}>&#8250;</button></div></div>`:'';
+  document.getElementById('pp-search-body').innerHTML=`<div class="tw"><table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>${pag}`;
+}
+
+function ppGoPage(p){ppCurrentPage=p;ppDoSearch();document.getElementById('pp-search-body').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function ppSortBy(col){if(ppSortCol===col)ppSortDir=ppSortDir==='asc'?'desc':'asc';else{ppSortCol=col;ppSortDir='asc';}ppDoSearch();}
+
+function openPPGatewayModal(){
+  document.getElementById('pp-d-start').value=ppConfig.startDate||'';
+  document.getElementById('pp-d-end').value=ppConfig.deadline||'2027-01-01';
+  ppRenderGatewayTable();
+  document.getElementById('pp-gateway-modal').classList.add('open');
+}
+function ppRenderGatewayTable(){
+  const el=document.getElementById('pp-gateway-body'); if(!el) return;
+  el.innerHTML=(ppConfig.gateways||[]).map((gw,i)=>`
+    <tr>
+      <td><input type="text" value="${gw.name||''}" oninput="ppConfig.gateways[${i}].name=this.value" placeholder="e.g. paypal_v2, paypal_checkout …" style="width:100%"></td>
+      <td><select onchange="ppConfig.gateways[${i}].type=this.value" style="width:100%">
+        ${['shutdown','newest','legacy'].map(t=>`<option value="${t}"${gw.type===t?' selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('')}
+      </select></td>
+      <td><button class="del-btn" onclick="ppDeleteGateway(${i})"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('');
+}
+function ppAddGatewayRow(){ppConfig.gateways.push({name:'',type:'legacy'});ppRenderGatewayTable();}
+function ppDeleteGateway(i){ppConfig.gateways.splice(i,1);ppRenderGatewayTable();}
+async function ppSaveGateways(){
+  ppConfig.startDate=document.getElementById('pp-d-start').value;
+  ppConfig.deadline=document.getElementById('pp-d-end').value||'2027-01-01';
+  await dbSavePayPalConfig(); await dbStampModified();
+  closeModal('pp-gateway-modal');
+  ppRefresh();
+  toast('PayPal gateway config saved');
+}
+
 // ── Init: load from Supabase ─────────────────────────────────
 async function initAuthenticatedDashboard(){
   try {
@@ -2475,6 +3010,8 @@ async function initAuthenticatedDashboard(){
   }
   refresh();
   renderDataFieldsBaseline();
+  renderTimestamps();
+  updateUploadStrip('migration');
   initChurnCharts();
 }
 
