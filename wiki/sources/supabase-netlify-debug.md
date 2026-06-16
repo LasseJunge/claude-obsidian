@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Supabase Integration im Netlify-Dashboard debuggen"
+aliases:
+  - "Netlify"
 date: 2026-05-05
 source_file: ".raw/Claude-Supabase-Integration im Netlify-Dashboard debuggen.md"
 tags:

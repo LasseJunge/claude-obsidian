@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: documented public wager
 title: "Buffett's $1M Hedge-Fund Bet (2008–2017)"
+aliases:
+  - "buffett-hedge-fund-bet"
 author: "Warren Buffett vs Protégé Partners (Ted Seides)"
 date_published: 2018
 venue: "Long Bets #362; Berkshire Hathaway letters"

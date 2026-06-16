@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: article
 title: "The Best AI Agents in 2026: Tools and Frameworks Compared"
+aliases:
+  - "best-ai-agents-2026-datacamp"
 author: DataCamp
 date_published: 2026
 url: https://www.datacamp.com/blog/best-ai-agents

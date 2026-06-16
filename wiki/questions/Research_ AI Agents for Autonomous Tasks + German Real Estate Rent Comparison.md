@@ -1,6 +1,8 @@
----
+﻿---
 type: synthesis
 title: "Research: AI Agents for Autonomous Tasks + German Real Estate Rent Comparison"
+aliases:
+  - "Research- AI Agents for Autonomous Tasks"
 created: 2026-06-11
 updated: 2026-06-11
 tags:

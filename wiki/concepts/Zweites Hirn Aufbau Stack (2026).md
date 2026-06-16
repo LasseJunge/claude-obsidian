@@ -1,6 +1,8 @@
----
+﻿---
 type: concept
 title: "Zweites Hirn Aufbau Stack"
+aliases:
+  - "Zweites Hirn Aufbau Stack"
 created: 2026-06-09
 updated: 2026-06-09
 tags:

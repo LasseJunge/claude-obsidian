@@ -1,7 +1,10 @@
----
+﻿---
 type: source
 source_type: documentation
 title: "ImmoScout24 Search Scraper API (Piloterr)"
+aliases:
+  - "ImmoScout24"
+  - "immoscout24-piloterr-api"
 author: Piloterr
 date_published: 2026
 url: https://www.piloterr.com/library/immoscout24-search

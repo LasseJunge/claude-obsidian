@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: industry report
 title: "SPIVA U.S. Scorecard (S&P Indices Versus Active)"
+aliases:
+  - "spiva-us-scorecard"
 author: "S&P Dow Jones Indices"
 date_published: 2025
 venue: "SPIVA U.S. Year-End 2025"

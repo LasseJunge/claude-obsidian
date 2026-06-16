@@ -1,6 +1,8 @@
----
+﻿---
 type: synthesis
 title: "Research: Claude Dashboard-Entwicklung – Best Practices und kritische Analyse"
+aliases:
+  - "Research- Claude Dashboard-Entwicklung"
 created: 2026-06-09
 updated: 2026-06-09
 tags:

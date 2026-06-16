@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: peer-reviewed paper
 title: "Empirical Asset Pricing via Machine Learning"
+aliases:
+  - "gu-kelly-xiu-empirical-asset-pricing-ml"
 author: "Shihao Gu, Bryan T. Kelly, Dacheng Xiu"
 date_published: 2020
 venue: "Review of Financial Studies 33(5), 2223–2273"

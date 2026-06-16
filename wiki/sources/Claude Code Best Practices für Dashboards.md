@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Claude Code Dashboard Best Practices 2026"
+aliases:
+  - "claude-code-dashboard-best-practices"
 created: 2026-06-09
 updated: 2026-06-09
 source_type: documentation

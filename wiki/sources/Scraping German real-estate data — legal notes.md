@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: aggregate
 title: "Legality of scraping German real-estate portals (ToS + GDPR)"
+aliases:
+  - "german-scraping-legality"
 author: WebScraping.AI, Scrapfly, webscraping.fyi
 date_published: 2026
 url: https://webscraping.fyi/legal/DE/

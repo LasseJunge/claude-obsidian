@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Claude Code Data Analytics Plugins 2026"
+aliases:
+  - "claude-code-data-analytics-plugins-2026"
 source_type: web research
 date_published: 2026-06
 url: https://claudecodeplugins.dev/category/data-analytics

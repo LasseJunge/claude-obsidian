@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: peer-reviewed paper
 title: "The 10 Reasons Most Machine Learning Funds Fail"
+aliases:
+  - "lopez-de-prado-10-reasons-ml-funds-fail"
 author: "Marcos López de Prado"
 date_published: 2018
 venue: "Journal of Portfolio Management 44(6), 120–133"

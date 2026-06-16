@@ -1,6 +1,8 @@
----
+﻿---
 type: question
 title: "How does the LLM Wiki pattern work?"
+aliases:
+  - "How does the LLM Wiki pattern work?"
 question: "How does the LLM Wiki pattern work and why is it better than RAG?"
 answer_quality: definitive
 created: 2026-04-07

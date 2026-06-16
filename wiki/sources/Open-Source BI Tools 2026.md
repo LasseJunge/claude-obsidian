@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Open Source BI Tools for Small Teams 2026"
+aliases:
+  - "open-source-bi-tools-2026"
 source_type: web research
 date_published: 2026-06
 url: https://valiotti.com/open-source-business-intelligence-tools/

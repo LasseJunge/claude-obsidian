@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: peer-reviewed papers
 title: "The Profitability of Day Traders (Brazil & Taiwan studies)"
+aliases:
+  - "day-trading-profitability-studies"
 author: "Chague, De-Losso, Giovannetti (Brazil); Barber, Lee, Liu, Odean (Taiwan)"
 date_published: 2020
 venue: "Working paper (Brazil 2020); Review of Financial Studies (Taiwan)"

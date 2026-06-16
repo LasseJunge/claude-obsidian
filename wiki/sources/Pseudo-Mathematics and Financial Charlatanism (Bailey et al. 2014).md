@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: peer-reviewed paper
 title: "Pseudo-Mathematics and Financial Charlatanism / The Deflated Sharpe Ratio"
+aliases:
+  - "bailey-lopez-de-prado-backtest-overfitting"
 author: "David H. Bailey, Jonathan Borwein, Marcos López de Prado, Qiji Jim Zhu"
 date_published: 2014
 venue: "Notices of the American Mathematical Society 61(5); Journal of Portfolio Management"

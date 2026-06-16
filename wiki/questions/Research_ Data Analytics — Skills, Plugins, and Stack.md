@@ -1,6 +1,8 @@
----
+﻿---
 type: synthesis
 title: "Research: Data Analytics — Skills, Plugins, and Stack"
+aliases:
+  - "Research- Data Analytics"
 created: 2026-06-10
 updated: 2026-06-10
 tags:

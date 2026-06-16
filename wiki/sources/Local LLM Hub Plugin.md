@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Local LLM Hub — All-in-one lokale KI für Obsidian"
+aliases:
+  - "local-llm-hub-plugin"
 created: 2026-06-09
 updated: 2026-06-09
 source_type: github

@@ -1,7 +1,9 @@
----
+﻿---
 type: source
 source_type: peer-reviewed review
 title: "Large Language Models in equity markets: applications, techniques, and insights"
+aliases:
+  - "llms-in-equity-markets-review"
 author: "(review article, PMC12421730)"
 date_published: 2025
 venue: "Discover Computing / PMC"

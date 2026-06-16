@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Johnny Decimal Zettelkasten — Compounding Knowledge mit AI Librarian"
+aliases:
+  - "johnny-decimal-zettelkasten-ai-librarian"
 created: 2026-06-09
 updated: 2026-06-09
 source_type: github

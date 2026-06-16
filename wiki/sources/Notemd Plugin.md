@@ -1,6 +1,9 @@
----
+﻿---
 type: source
 title: "Notemd — Obsidian Plugin für automatische Wiki-Links & Konzeptseiten"
+aliases:
+  - "notemd-plugin"
+  - "wiki-links"
 created: 2026-06-09
 updated: 2026-06-09
 source_type: github

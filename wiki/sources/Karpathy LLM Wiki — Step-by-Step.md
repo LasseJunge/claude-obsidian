@@ -1,6 +1,9 @@
----
+﻿---
 type: source
 title: "Step-by-Step Guide: Build Your Own AI Second Brain with Obsidian and Karpathy's LLM Wiki Pattern"
+aliases:
+  - "Karpathy LLM Wiki Pattern"
+  - "karpathy-llm-wiki-step-by-step"
 created: 2026-06-09
 updated: 2026-06-09
 source_type: blog

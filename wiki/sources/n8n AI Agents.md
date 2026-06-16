@@ -1,7 +1,10 @@
----
+﻿---
 type: source
 source_type: documentation
 title: "n8n AI Agents — capabilities"
+aliases:
+  - "n8n"
+  - "n8n-ai-agents"
 author: n8n.io
 date_published: 2026
 url: https://n8n.io/ai-agents/

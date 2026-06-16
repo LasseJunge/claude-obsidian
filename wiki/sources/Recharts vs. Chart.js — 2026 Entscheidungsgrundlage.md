@@ -1,6 +1,8 @@
----
+﻿---
 type: source
 title: "Recharts vs Chart.js 2026 — React Chart Library Vergleich"
+aliases:
+  - "recharts-vs-chartjs-2026"
 created: 2026-06-09
 updated: 2026-06-09
 source_type: article
