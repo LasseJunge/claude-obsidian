@@ -1,0 +1,1828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conversion Dashboard</title>
+
+  <!-- ╔═══════════════════════════════════════════════════════════╗
+       ║  SUPABASE CONFIG — hier deine Werte eintragen            ║
+       ║  supabase.com → Projekt → Settings → API                 ║
+       ╚═══════════════════════════════════════════════════════════╝ -->
+  <script>
+    window.SUPABASE_URL = 'https://ynyknbnmnloyhdxztwig.supabase.co';
+    window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlueWtuYm5tbmxveWhkeHp0d2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NjMzNDUsImV4cCI6MjA5MzUzOTM0NX0.Sl3aMCVMuBGvNgIzfJU0zinLAcm6Qp06HD8LoGCAasE';
+  </script>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.10.1/umd/Recharts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Lucide Icon Shim — alle Icons inline, kein CDN-Problem -->
+  <script>
+    (function() {
+      const icon = (svg) => function Icon(props) {
+        const size = props.size || 16;
+        const color = props.color || 'currentColor';
+        const sw = props.strokeWidth || 2;
+        return React.createElement('svg', {
+          xmlns: 'http://www.w3.org/2000/svg', width: size, height: size,
+          viewBox: '0 0 24 24', fill: 'none', stroke: color,
+          strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round',
+          style: props.style, className: props.className,
+          dangerouslySetInnerHTML: { __html: svg }
+        });
+      };
+      window.LucideReact = {
+        Upload:        icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>'),
+        Trash2:        icon('<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>'),
+        RefreshCw:     icon('<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>'),
+        AlertCircle:   icon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'),
+        CheckCircle2:  icon('<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>'),
+        X:             icon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+        Clock:         icon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+        XCircle:       icon('<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'),
+        AlertTriangle: icon('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'),
+        ArrowRight:    icon('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>'),
+        Database:      icon('<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>'),
+        Calendar:      icon('<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+        Info:          icon('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'),
+        Zap:           icon('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'),
+        FileCheck2:    icon('<path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="m3 15 2 2 4-4"/>'),
+        FileWarning:   icon('<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M12 9v4"/><path d="M12 17h.01"/>'),
+      };
+    })();
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #faf7f2; }
+    #root { min-height: 100vh; }
+    #loading { display: flex; align-items: center; justify-content: center;
+      height: 100vh; font-family: system-ui; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="root"><div id="loading">Dashboard wird geladen…</div></div>
+
+  <script type="text/babel" data-presets="react">
+    // ── CDN shims ────────────────────────────────────────────────────
+    const React    = window.React;
+    const ReactDOM = window.ReactDOM;
+    const Papa     = window.Papa;
+
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+    const {
+      LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+      Tooltip, Legend, ResponsiveContainer, Cell,
+    } = window.Recharts;
+
+    const {
+      Upload, Trash2, RefreshCw, AlertCircle, CheckCircle2, X,
+      Clock, XCircle, AlertTriangle, ArrowRight, Database, Calendar,
+      Info, Zap, FileCheck2, FileWarning,
+    } = window.LucideReact;
+
+// Benötigt eine Tabelle: snapshots (key text primary key, value text)
+// Supabase-URL und Anon-Key werden über window.SUPABASE_URL / window.SUPABASE_KEY
+// aus dem index.html gesetzt (oder als Netlify-Env-Variablen über den Build).
+const storage = {
+  _client: null,
+  _getClient() {
+    if (!this._client) {
+      const url = window.SUPABASE_URL;
+      const key = window.SUPABASE_KEY;
+      if (!url || !key) throw new Error('Supabase URL/Key fehlt in index.html.');
+      this._client = window.supabase.createClient(url, key);
+    }
+    return this._client;
+  },
+  async get(key) {
+    try {
+      const { data, error } = await this._getClient()
+        .from('snapshots')
+        .select('value')
+        .eq('key', key)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+      return data ? { key, value: data.value } : null;
+    } catch { return null; }
+  },
+  async set(key, value) {
+    const { error } = await this._getClient()
+      .from('snapshots')
+      .upsert({ key, value }, { onConflict: 'key' });
+    if (error) throw error;
+    return { key, value };
+  },
+  async delete(key) {
+    const { error } = await this._getClient()
+      .from('snapshots')
+      .delete()
+      .eq('key', key);
+    if (error) throw error;
+    return { key, deleted: true };
+  },
+};
+
+const C = {
+  bg: '#faf7f2', card: '#ffffff', ink: '#1a1a1a', inkSoft: '#3a3a3a',
+  muted: '#6b6b6b', mutedSoft: '#9a9a9a', border: '#e7e3dc', borderStrong: '#d4cec3',
+  accent: '#c2410c', accentSoft: '#fde8d8', subtle: '#f3efe7',
+};
+
+const STATUS_META = {
+  TRIAL_STARTED:  { label: 'Trial Started',     color: '#0369a1', bg: '#dbeafe', short: 'Trial' },
+  TRIAL_ENDED:    { label: 'Trial Ended',       color: '#6b7280', bg: '#f3f4f6', short: 'Ended' },
+  ACTIVE:         { label: 'Active (paying)',   color: '#15803d', bg: '#dcfce7', short: 'Active' },
+  PAYMENT_FAILED: { label: 'Payment Failed',    color: '#b91c1c', bg: '#fee2e2', short: 'Failed' },
+};
+const STATUS_ORDER = ['TRIAL_STARTED', 'ACTIVE', 'TRIAL_ENDED', 'PAYMENT_FAILED'];
+const statusMeta = (s) => STATUS_META[s] || { label: s, color: '#6b7280', bg: '#f3f4f6', short: s };
+
+// Robustes Parsing für last_login: ISO bevorzugt, DD.MM.YYYY / DD/MM/YYYY / DD-MM-YYYY als UTC.
+function parseLoginDate(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  if (!s) return null;
+  // ISO YYYY-MM-DD[ T]HH:MM[:SS]
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (iso) {
+    const [, Y, M, D, h, m, sec] = iso;
+    const d = new Date(Date.UTC(+Y, +M - 1, +D, +(h || 0), +(m || 0), +(sec || 0)));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // DD.MM.YYYY / DD/MM/YYYY / DD-MM-YYYY
+  const dmy = s.match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})/);
+  if (dmy) {
+    let [, D, M, Y] = dmy;
+    let y = +Y; if (y < 100) y += 2000;
+    const d = new Date(Date.UTC(y, +M - 1, +D));
+    if (d.getUTCDate() !== +D || d.getUTCMonth() !== +M - 1) return null;
+    return d;
+  }
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? null : new Date(t);
+}
+
+// Klassifiziert package_name in 'Shop' | 'Website' | null — ePages Direct.
+// Nur der Text VOR dem Bindestrich zählt. Old:Website (ohne Bindestrich) → Website.
+// Bildungspaket / Now / unbekannt → null (ignoriert).
+function classifyPackageEpages(pkg) {
+  if (!pkg) return null;
+  const raw = String(pkg).trim();
+  if (!raw) return null;
+  const prefix = raw.split('-')[0].trim().toLowerCase().replace(/\s+/g, ' ');
+  if (prefix === 'store') return 'Shop';
+  if (prefix === 'website') return 'Website';
+  if (prefix === 'old: website' || prefix === 'old:website') return 'Website';
+  return null;
+}
+
+// Klassifiziert package_name für S-Payment-Datenset.
+// Live Shop + S-Webshop → 'Shop' (gemeinsam in einem Balken), S-Website → 'Website'.
+// Internal / TrialShop / unbekannt → null (ignoriert).
+// Achtung: 'S-Webshop' enthält selbst einen Bindestrich, deshalb kein split('-').
+// Land aus package_name (ePages Direct). Suffix nach erstem '-'.
+// EN→United Kingdom, ES→Spain, FR→France, DE→Germany. Unbekannt → null.
+function classifyCountryEpages(pkg) {
+  if (!pkg) return null;
+  const raw = String(pkg).trim();
+  const idx = raw.indexOf('-');
+  if (idx < 0) return null;
+  const suffix = raw.slice(idx + 1).trim().toUpperCase();
+  if (suffix === 'EN') return 'United Kingdom';
+  if (suffix === 'ES') return 'Spain';
+  if (suffix === 'FR') return 'France';
+  if (suffix === 'DE') return 'Germany';
+  return null;
+}
+
+const COUNTRY_ORDER = ['United Kingdom', 'Spain', 'France', 'Germany'];
+
+function classifyPackageSpayment(pkg) {
+  if (!pkg) return null;
+  const raw = String(pkg).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!raw) return null;
+  // Vor erstem " - " (Leerzeichen-Bindestrich-Leerzeichen) abschneiden, sonst gesamten Wert nutzen.
+  const prefix = raw.split(' - ')[0].trim();
+  if (prefix === 'live shop') return 'Shop';
+  if (prefix === 's-webshop') return 'Shop';
+  if (prefix === 's-website') return 'Website';
+  return null;
+}
+
+const DATASETS = {
+  epages: {
+    id: 'epages',
+    label: 'ePages Direct',
+    storageKey: 'subscription_snapshots',
+    classifyPackage: classifyPackageEpages,
+    packageSubtitle: 'Distribution of entries by package_name. Bildungspaket and Now are excluded.',
+  },
+  spayment: {
+    id: 'spayment',
+    label: 'S-Payment',
+    storageKey: 'subscription_snapshots_spayment',
+    classifyPackage: classifyPackageSpayment,
+    packageSubtitle: 'Distribution of entries by package_name. Live Shop and S-Webshop are grouped as Shop; Internal and TrialShop are excluded.',
+  },
+};
+const DATASET_IDS = ['epages', 'spayment'];
+const ACTIVE_DATASET_KEY = 'active_dataset';
+
+const REQUIRED_IMPORT_COLUMNS = ['stripe_subscription_status', 'stripe_customer_id'];
+const KNOWN_IMPORT_STATUSES = new Set(['TRIAL_STARTED', 'TRIAL_ENDED', 'ACTIVE', 'PAYMENT_FAILED']);
+
+const TRIAL_DURATION_DAYS = 14;
+
+const CONVERSION_BUCKETS = [
+  { id: '0-7',   label: '0–7 d',  min: 0,  max: 7 },
+  { id: '8-14',  label: '8–14 d', min: 8,  max: 14 },
+  { id: '15-21', label: '15–21 d',min: 15, max: 21 },
+  { id: '22-28', label: '22–28 d',min: 22, max: 28 },
+  { id: '29+',   label: '29+ d',  min: 29, max: Infinity },
+];
+
+const fonts = `
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+* { box-sizing: border-box; }
+body { margin: 0; }
+`;
+
+const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TRACKING_START = '2026-04'; // Shops created before this month are excluded from conversion rate and timing
+const formatMonth = (yyyymm) => {
+  const [y, m] = yyyymm.split('-');
+  return `${MONTH_NAMES_EN[parseInt(m, 10) - 1]} ${y}`;
+};
+const formatFilterLabel = (filter) => {
+  if (!filter || filter === 'ALL') return 'All';
+  if (/^\d{4}$/.test(filter)) return filter;
+  if (/^\d{4}-\d{2}$/.test(filter)) return formatMonth(filter);
+  return filter;
+};
+
+function SubscriptionDashboard() {
+  const [activeDataset, setActiveDataset] = useState(() => {
+    try {
+      const v = localStorage.getItem(ACTIVE_DATASET_KEY);
+      if (v && DATASETS[v]) return v;
+    } catch {}
+    return 'epages';
+  });
+  const dataset = DATASETS[activeDataset];
+
+  const [snapshots, setSnapshots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [info, setInfo] = useState(null);
+  const [importDiagnosis, setImportDiagnosis] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [transitionFilter, setTransitionFilter] = useState('ALL');
+  const [monthFilter, setMonthFilter] = useState('ALL');
+  const [hoveredYear, setHoveredYear] = useState(null);
+  const [packageViewMode, setPackageViewMode] = useState('total');
+  const [countryBarLayout, setCountryBarLayout] = useState('stacked');
+  const [trialStartsGranularity, setTrialStartsGranularity] = useState('month');
+  const fileInputRef = useRef(null);
+
+  // Snapshots beim Wechsel des Datasets neu laden.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const r = await storage.get(dataset.storageKey);
+        if (cancelled) return;
+        setSnapshots(r?.value ? JSON.parse(r.value) : []);
+      } catch {
+        if (!cancelled) setSnapshots([]);
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [dataset.storageKey]);
+
+  const switchDataset = useCallback((id) => {
+    if (!DATASETS[id] || id === activeDataset) return;
+    setActiveDataset(id);
+    try { localStorage.setItem(ACTIVE_DATASET_KEY, id); } catch {}
+    setImportDiagnosis(null);
+    setError(null);
+    setInfo(null);
+    setTransitionFilter('ALL');
+    setMonthFilter('ALL');
+    setHoveredYear(null);
+    setPackageViewMode('total');
+    setCountryBarLayout('stacked');
+    setTrialStartsGranularity('month');
+  }, [activeDataset]);
+
+  const persistSnapshots = useCallback(async (next) => {
+    try { await storage.set(dataset.storageKey, JSON.stringify(next)); }
+    catch { setError('Storage issue — delete older snapshots.'); }
+  }, [dataset.storageKey]);
+
+  const handleFiles = (fileList) => {
+    setError(null); setInfo(null); setImportDiagnosis(null);
+    const incoming = Array.from(fileList).filter(f => f.name.toLowerCase().endsWith('.csv'));
+    if (!incoming.length) { setError('Please upload CSV files.'); return; }
+
+    let processed = 0, working = [...snapshots], added = 0, skipped = 0;
+    const fileDiagnostics = [];
+
+    const finishFile = (diagnostic) => {
+      fileDiagnostics.push(diagnostic);
+      if (processed === incoming.length) finalize();
+    };
+
+    incoming.forEach(file => {
+      Papa.parse(file, {
+        header: true, skipEmptyLines: 'greedy',
+        complete: (results) => {
+          processed++;
+          const dateInfo = getSnapshotDateInfo(file.name, file.lastModified);
+          const analysis = analyzeImportFile(file, results, working, dateInfo);
+
+          if (analysis.diagnostic.errors.length) {
+            finishFile({ ...analysis.diagnostic, outcome: 'failed', status: 'error' });
+            return;
+          }
+
+          if (analysis.isDuplicateFile) {
+            skipped++;
+            finishFile({ ...analysis.diagnostic, outcome: 'skipped', status: 'skipped' });
+            return;
+          }
+
+          const snapshotAt = dateInfo.value;
+          const diagnostic = {
+            ...analysis.diagnostic,
+            outcome: 'added',
+            status: analysis.diagnostic.warnings.length ? 'warning' : 'ok',
+          };
+          working.push({
+            id: `${file.name}-${Date.now()}-${processed}`,
+            fileName: file.name,
+            snapshotAt,
+            uploadedAt: new Date().toISOString(),
+            shops: analysis.shops,
+            count: analysis.shops.length,
+            diagnostics: diagnostic,
+          });
+          added++;
+          finishFile(diagnostic);
+        },
+        error: (err) => {
+          processed++;
+          finishFile(createParseErrorDiagnostic(file, err));
+        },
+      });
+    });
+
+    function finalize() {
+      working.sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
+      setSnapshots(working); persistSnapshots(working);
+      const report = createImportReport(fileDiagnostics);
+      setImportDiagnosis(report);
+      const parts = [];
+      const failed = report.totals.failed;
+      const warnings = report.totals.warnings;
+      if (added) parts.push(`${added} snapshot${added > 1 ? 's' : ''} added`);
+      if (skipped) parts.push(`${skipped} skipped`);
+      if (parts.length) parts.push(warnings ? 'Diagnostics with notices' : 'Diagnostics OK');
+      if (parts.length) setInfo(parts.join(' · '));
+      if (failed) setError(`${failed} file${failed > 1 ? 's' : ''} could not be imported. See Import Diagnostics for details.`);
+    }
+  };
+
+  const removeSnapshot = (id) => {
+    const next = snapshots.filter(s => s.id !== id);
+    setSnapshots(next); persistSnapshots(next);
+  };
+
+  const resetAll = async () => {
+    if (!window.confirm('Really delete all snapshots?')) return;
+    setSnapshots([]);
+    setImportDiagnosis(null);
+    try { await storage.delete(dataset.storageKey); } catch {}
+    setInfo('All data deleted.');
+  };
+
+  const sorted = useMemo(() =>
+    [...snapshots].sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt)),
+  [snapshots]);
+  const latest = sorted[sorted.length - 1] || null;
+  const latestImportReport = useMemo(() => {
+    if (importDiagnosis) return importDiagnosis;
+    if (latest?.diagnostics) {
+      return createImportReport([latest.diagnostics], latest.uploadedAt);
+    }
+    return null;
+  }, [importDiagnosis, latest]);
+
+  // Pro Shop: vollständige Historie + createdAt
+  const shopHistory = useMemo(() => {
+    const map = new Map();
+    sorted.forEach(snap => {
+      snap.shops.forEach(shop => {
+        if (!map.has(shop.customerId)) {
+          map.set(shop.customerId, { customerId: shop.customerId, shopUrl: shop.shopUrl, package: shop.package, createdAt: shop.createdAt || null, history: [] });
+        }
+        const e = map.get(shop.customerId);
+        if (!e.createdAt && shop.createdAt) e.createdAt = shop.createdAt;
+        e.shopUrl = shop.shopUrl || e.shopUrl;
+        e.package = shop.package || e.package;
+        e.history.push({ snapshotAt: snap.snapshotAt, snapshotId: snap.id, status: shop.status, lastLogin: shop.lastLogin || '' });
+      });
+    });
+    return map;
+  }, [sorted]);
+
+  const availableMonths = useMemo(() => {
+    const set = new Set();
+    shopHistory.forEach(s => {
+      if (s.createdAt) {
+        const m = s.createdAt.substring(0, 7);
+        if (/^\d{4}-\d{2}$/.test(m)) set.add(m);
+      }
+    });
+    return [...set].sort();
+  }, [shopHistory]);
+
+  const availableYearsMap = useMemo(() => {
+    const map = {};
+    availableMonths.forEach(m => {
+      const y = m.substring(0, 4);
+      if (!map[y]) map[y] = [];
+      map[y].push(m);
+    });
+    Object.keys(map).forEach(y => map[y].sort());
+    return map;
+  }, [availableMonths]);
+
+  const availableYears = useMemo(
+    () => Object.keys(availableYearsMap).sort().reverse(),
+    [availableYearsMap]
+  );
+
+  useEffect(() => {
+    if (monthFilter === 'ALL') return;
+    if (/^\d{4}$/.test(monthFilter)) {
+      if (!availableYearsMap[monthFilter]) setMonthFilter('ALL');
+    } else if (/^\d{4}-\d{2}$/.test(monthFilter)) {
+      if (!availableMonths.includes(monthFilter)) setMonthFilter('ALL');
+    } else {
+      setMonthFilter('ALL');
+    }
+  }, [availableMonths, availableYearsMap, monthFilter]);
+
+  const filteredShops = useMemo(() => {
+    const list = [];
+    const isYear = /^\d{4}$/.test(monthFilter);
+    const isMonth = /^\d{4}-\d{2}$/.test(monthFilter);
+    shopHistory.forEach(s => {
+      if (monthFilter === 'ALL') { list.push(s); return; }
+      if (!s.createdAt) return;
+      if (isYear && s.createdAt.substring(0, 4) === monthFilter) list.push(s);
+      else if (isMonth && s.createdAt.substring(0, 7) === monthFilter) list.push(s);
+    });
+    return list;
+  }, [shopHistory, monthFilter]);
+
+  // Shops from tracking start onwards — used for conversion rate and timing only
+  const cohortShops = useMemo(() => {
+    return filteredShops.filter(s => s.createdAt && s.createdAt.substring(0, 7) >= TRACKING_START);
+  }, [filteredShops]);
+
+  // Aktueller Stand
+  const currentCounts = useMemo(() => {
+    const counts = { TRIAL_STARTED: 0, TRIAL_ENDED: 0, ACTIVE: 0, PAYMENT_FAILED: 0 };
+    if (!latest) return counts;
+    filteredShops.forEach(s => {
+      const inLatest = s.history.find(h => h.snapshotId === latest.id);
+      if (inLatest && counts[inLatest.status] !== undefined) counts[inLatest.status]++;
+    });
+    return counts;
+  }, [filteredShops, latest]);
+
+  // Trial-Kohorte mit vollständiger Logik
+  const trialCohort = useMemo(() => {
+    const r = {
+      total: 0,
+      // TRIAL_STARTED → direkt ACTIVE
+      directActive: 0,
+      // TRIAL_STARTED → TRIAL_ENDED → ACTIVE (gerettet)
+      rescuedActive: 0,
+      // Noch in TRIAL_ENDED (potenzielle Rettung noch möglich)
+      stillTrialEnded: 0,
+      // Noch im Trial
+      stillTrial: 0,
+      // Aktuell mit fehlgeschlagener Zahlung
+      paymentFailed: 0,
+      // Sonstige (z.B. nicht im neuesten Snapshot oder unbekannter Status)
+      other: 0,
+      noCreatedAt: 0,
+    };
+    if (!latest) return r;
+    cohortShops.forEach(shop => {
+      if (!shop.createdAt) { r.noCreatedAt++; return; }
+      r.total++;
+      const sortedHist = [...shop.history].sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
+      const inLatest = sortedHist.find(h => h.snapshotId === latest.id);
+      const hadTrialEnded = sortedHist.some(h => h.status === 'TRIAL_ENDED');
+
+      if (!inLatest) {
+        r.other++;
+        return;
+      }
+
+      const cur = inLatest.status;
+      if (cur === 'TRIAL_STARTED') {
+        r.stillTrial++;
+      } else if (cur === 'ACTIVE') {
+        // War er vorher in TRIAL_ENDED?
+        if (hadTrialEnded) r.rescuedActive++;
+        else r.directActive++;
+      } else if (cur === 'TRIAL_ENDED') {
+        r.stillTrialEnded++;
+      } else if (cur === 'PAYMENT_FAILED') {
+        r.paymentFailed++;
+      } else {
+        r.other++;
+      }
+    });
+    return r;
+  }, [cohortShops, latest]);
+
+  const totalActive = trialCohort.directActive + trialCohort.rescuedActive;
+  const totalRate = trialCohort.total > 0 ? totalActive / trialCohort.total * 100 : null;
+  const activeSplitLabel = `${trialCohort.directActive} direkt + ${trialCohort.rescuedActive} gerettet`;
+
+  // Login-Aktivität der Shop-Owner (basiert auf last_login im neuesten Snapshot)
+  const loginActivity = useMemo(() => {
+    const r = { total: 0, active: 0, inactive: 0, lost: 0, neverLoggedIn: 0, referenceDate: null };
+    if (!latest) return r;
+    const refDate = latest.snapshotAt ? new Date(latest.snapshotAt) : new Date();
+    r.referenceDate = refDate;
+    const refMs = refDate.getTime();
+    const DAY = 24 * 60 * 60 * 1000;
+    filteredShops.forEach(shop => {
+      const inLatest = shop.history.find(h => h.snapshotId === latest.id);
+      if (!inLatest) return;
+      r.total++;
+      const ll = (inLatest.lastLogin || '').trim();
+      const parsed = parseLoginDate(ll);
+      if (!ll || !parsed) {
+        r.neverLoggedIn++;
+        r.lost++;
+        return;
+      }
+      const days = (refMs - parsed.getTime()) / DAY;
+      if (days <= 30) r.active++;
+      else if (days <= 90) r.inactive++;
+      else r.lost++;
+    });
+    return r;
+  }, [filteredShops, latest]);
+
+  // Übergänge zwischen Snapshots
+  const transitions = useMemo(() => {
+    if (sorted.length < 2) return [];
+    const list = [];
+    const filteredIds = new Set(filteredShops.map(s => s.customerId));
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+      const prevMap = new Map(prev.shops.map(s => [s.customerId, s]));
+
+      // Status-Wechsel
+      curr.shops.forEach(s => {
+        if (!filteredIds.has(s.customerId)) return;
+        const old = prevMap.get(s.customerId);
+        if (old && old.status !== s.status) {
+          list.push({ customerId: s.customerId, shopUrl: s.shopUrl, package: s.package, from: old.status, to: s.status, at: curr.snapshotAt });
+        }
+      });
+    }
+    const priority = (from, to) => {
+      if (from === 'ACTIVE' && to === 'PAYMENT_FAILED') return 0;
+      if (from === 'ACTIVE' && to === 'TRIAL_ENDED') return 1;
+      if (from === 'PAYMENT_FAILED' && to === 'TRIAL_ENDED') return 2;
+      if (from === 'PAYMENT_FAILED' && to === 'ACTIVE') return 3;
+      if (from === 'TRIAL_STARTED' && to === 'ACTIVE') return 4;
+      if (from === 'TRIAL_ENDED' && to === 'ACTIVE') return 5;
+      if (from === 'TRIAL_STARTED' && to === 'TRIAL_ENDED') return 6;
+      return 7;
+    };
+    return list.sort((a, b) => {
+      const pa = priority(a.from, a.to);
+      const pb = priority(b.from, b.to);
+      if (pa !== pb) return pa - pb;
+      return new Date(b.at) - new Date(a.at);
+    });
+  }, [sorted, filteredShops]);
+
+  const transitionCounts = useMemo(() => ({
+    all: transitions.length,
+    activated: transitions.filter(t =>
+      (t.from === 'TRIAL_STARTED' || t.from === 'TRIAL_ENDED') && t.to === 'ACTIVE'
+    ).length,
+    toEnded: transitions.filter(t => t.from === 'TRIAL_STARTED' && t.to === 'TRIAL_ENDED').length,
+  }), [transitions]);
+
+  const filteredTransitions = useMemo(() => {
+    if (transitionFilter === 'ALL') return transitions;
+    if (transitionFilter === 'activated') return transitions.filter(t =>
+      (t.from === 'TRIAL_STARTED' || t.from === 'TRIAL_ENDED') && t.to === 'ACTIVE'
+    );
+    if (transitionFilter === 'toEnded') return transitions.filter(t => t.from === 'TRIAL_STARTED' && t.to === 'TRIAL_ENDED');
+    return transitions;
+  }, [transitions, transitionFilter]);
+
+  // Conversion-Timing
+  const conversionTimings = useMemo(() => {
+    return cohortShops.flatMap(shop => {
+      if (!shop.createdAt) return [];
+      const sh = [...shop.history].sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
+      const firstActive = sh.find(h => h.status === 'ACTIVE');
+      if (!firstActive) return [];
+      const trialBefore = [...sh].reverse().find(h =>
+        h.status === 'TRIAL_STARTED' && new Date(h.snapshotAt) < new Date(firstActive.snapshotAt)
+      );
+      const endedBefore = [...sh].reverse().find(h =>
+        h.status === 'TRIAL_ENDED' && new Date(h.snapshotAt) < new Date(firstActive.snapshotAt)
+      );
+      const created = new Date(shop.createdAt);
+      const ref = trialBefore || endedBefore;
+      const estimatedAt = ref
+        ? new Date((new Date(ref.snapshotAt).getTime() + new Date(firstActive.snapshotAt).getTime()) / 2)
+        : new Date((created.getTime() + new Date(firstActive.snapshotAt).getTime()) / 2);
+      const days = Math.max(0, Math.round((estimatedAt - created) / 86400000));
+      return [{ days }];
+    });
+  }, [cohortShops]);
+
+  const conversionBuckets = useMemo(() => {
+    const buckets = CONVERSION_BUCKETS.map(b => ({ ...b, active: 0 }));
+    conversionTimings.forEach(t => {
+      const b = buckets.find(b => t.days >= b.min && t.days <= b.max);
+      if (b) b.active++;
+    });
+    return buckets;
+  }, [conversionTimings]);
+
+  const conversionStats = useMemo(() => {
+    if (!conversionTimings.length) return null;
+    const days = conversionTimings.map(t => t.days).sort((a, b) => a - b);
+    return {
+      count: days.length,
+      median: days[Math.floor(days.length / 2)],
+      avg: (days.reduce((a, b) => a + b, 0) / days.length).toFixed(1),
+    };
+  }, [conversionTimings]);
+
+  // Shop vs Website (Spalte package_name; Bildungspaket/Now ignoriert; Old:Website → Website)
+  const packageDistribution = useMemo(() => {
+    let shop = 0, website = 0;
+    const byCountry = Object.fromEntries(COUNTRY_ORDER.map(c => [c, { Shop: 0, Website: 0 }]));
+    const isEpages = activeDataset === 'epages';
+    filteredShops.forEach(s => {
+      const cat = dataset.classifyPackage(s.package);
+      if (cat === 'Shop') shop++;
+      else if (cat === 'Website') website++;
+      if (isEpages && cat) {
+        const country = classifyCountryEpages(s.package);
+        if (country) byCountry[country][cat]++;
+      }
+    });
+    return {
+      data: [
+        { name: 'Shop', count: shop },
+        { name: 'Website', count: website },
+      ],
+      countryData: COUNTRY_ORDER.map(name => ({ name, ...byCountry[name] })),
+      shop,
+      website,
+      total: shop + website,
+    };
+  }, [filteredShops, dataset, activeDataset]);
+
+  // Trial-Starts pro Monat / Woche (basiert auf createdAt)
+  const trialStarts = useMemo(() => {
+    const monthMap = new Map();
+    const weekMap = new Map();
+    const isoWeek = (d) => {
+      const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      const day = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - day);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const wk = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+      return `${date.getUTCFullYear()}-W${String(wk).padStart(2, '0')}`;
+    };
+    let minD = null, maxD = null;
+    filteredShops.forEach(s => {
+      if (!s.createdAt) return;
+      const d = new Date(s.createdAt);
+      if (Number.isNaN(d.getTime())) return;
+      const mk = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+      monthMap.set(mk, (monthMap.get(mk) || 0) + 1);
+      const wk = isoWeek(d);
+      weekMap.set(wk, (weekMap.get(wk) || 0) + 1);
+      if (!minD || d < minD) minD = d;
+      if (!maxD || d > maxD) maxD = d;
+    });
+    const monthSeries = [];
+    if (minD && maxD) {
+      const cur = new Date(Date.UTC(minD.getUTCFullYear(), minD.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(maxD.getUTCFullYear(), maxD.getUTCMonth(), 1));
+      while (cur <= end) {
+        const mk = `${cur.getUTCFullYear()}-${String(cur.getUTCMonth() + 1).padStart(2, '0')}`;
+        monthSeries.push({ key: mk, count: monthMap.get(mk) || 0 });
+        cur.setUTCMonth(cur.getUTCMonth() + 1);
+      }
+    }
+    const weekSeries = [];
+    if (minD && maxD) {
+      const startMonday = new Date(minD);
+      const dow = startMonday.getUTCDay() || 7;
+      startMonday.setUTCDate(startMonday.getUTCDate() - (dow - 1));
+      const cur = new Date(startMonday);
+      while (cur <= maxD) {
+        const wk = isoWeek(cur);
+        weekSeries.push({ key: wk, count: weekMap.get(wk) || 0 });
+        cur.setUTCDate(cur.getUTCDate() + 7);
+      }
+    }
+    const refDate = maxD || ((latest && latest.snapshotAt) ? new Date(latest.snapshotAt) : new Date());
+    const curMk = `${refDate.getUTCFullYear()}-${String(refDate.getUTCMonth() + 1).padStart(2, '0')}`;
+    const prevDate = new Date(Date.UTC(refDate.getUTCFullYear(), refDate.getUTCMonth() - 1, 1));
+    const prevMk = `${prevDate.getUTCFullYear()}-${String(prevDate.getUTCMonth() + 1).padStart(2, '0')}`;
+    const curWk = isoWeek(refDate);
+    const prevW = new Date(refDate); prevW.setUTCDate(prevW.getUTCDate() - 7);
+    const prevWk = isoWeek(prevW);
+    const thisMonth = monthMap.get(curMk) || 0;
+    const lastMonth = monthMap.get(prevMk) || 0;
+    const thisWeek = weekMap.get(curWk) || 0;
+    const lastWeek = weekMap.get(prevWk) || 0;
+    const monthsAvg = monthSeries.length ? (monthSeries.reduce((a, b) => a + b.count, 0) / monthSeries.length) : 0;
+    const weeksAvg = weekSeries.length ? (weekSeries.reduce((a, b) => a + b.count, 0) / weekSeries.length) : 0;
+    const delta = (cur, prev) => prev === 0 ? null : ((cur - prev) / prev * 100);
+    return {
+      monthSeries, weekSeries,
+      thisMonth, lastMonth, thisWeek, lastWeek,
+      monthsAvg, weeksAvg,
+      monthDelta: delta(thisMonth, lastMonth),
+      weekDelta: delta(thisWeek, lastWeek),
+      total: monthSeries.reduce((a, b) => a + b.count, 0),
+    };
+  }, [filteredShops, latest]);
+
+  // Conversion-Rate nach Produktkategorie (Trial-Kohorte split Shop/Website)
+  const conversionByCategory = useMemo(() => {
+    const make = () => ({ total: 0, directActive: 0, rescuedActive: 0, stillTrial: 0, stillTrialEnded: 0, paymentFailed: 0, other: 0 });
+    const r = { Shop: make(), Website: make() };
+    if (!latest) return r;
+    filteredShops.forEach(shop => {
+      if (!shop.createdAt) return;
+      const cat = dataset.classifyPackage(shop.package);
+      if (cat !== 'Shop' && cat !== 'Website') return;
+      const bucket = r[cat];
+      bucket.total++;
+      const sortedHist = [...shop.history].sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
+      const inLatest = sortedHist.find(h => h.snapshotId === latest.id);
+      const hadTrialEnded = sortedHist.some(h => h.status === 'TRIAL_ENDED');
+      if (!inLatest) { bucket.other++; return; }
+      const cur = inLatest.status;
+      if (cur === 'TRIAL_STARTED') bucket.stillTrial++;
+      else if (cur === 'ACTIVE') { if (hadTrialEnded) bucket.rescuedActive++; else bucket.directActive++; }
+      else if (cur === 'TRIAL_ENDED') bucket.stillTrialEnded++;
+      else if (cur === 'PAYMENT_FAILED') bucket.paymentFailed++;
+      else bucket.other++;
+    });
+    return r;
+  }, [filteredShops, latest, dataset]);
+
+  const timeSeries = useMemo(() => sorted.map(snap => {
+    const c = { TRIAL_STARTED: 0, TRIAL_ENDED: 0, ACTIVE: 0, PAYMENT_FAILED: 0 };
+    snap.shops.forEach(s => { if (c[s.status] !== undefined) c[s.status]++; });
+    return { date: formatShortDate(snap.snapshotAt), ...c };
+  }), [sorted]);
+
+  if (loading) return <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontFamily: 'Inter, sans-serif' }}>Loading…</div>;
+
+  return (
+    <div style={{ background: C.bg, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif', color: C.ink }}>
+      <style>{fonts}</style>
+
+      <header style={{ borderBottom: `1px solid ${C.border}`, background: C.card }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: C.muted, fontWeight: 500 }}>{dataset.label}</div>
+            <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, fontSize: 32, margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>Trial Conversion Dashboard</h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div role="tablist" aria-label="Select data source" style={{ display: 'inline-flex', border: `1px solid ${C.borderStrong}`, borderRadius: 8, padding: 3, background: C.subtle }}>
+              {DATASET_IDS.map(id => {
+                const d = DATASETS[id];
+                const isActive = id === activeDataset;
+                return (
+                  <button
+                    key={id}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => switchDataset(id)}
+                    style={{
+                      border: 'none',
+                      background: isActive ? C.accent : 'transparent',
+                      color: isActive ? '#fff' : C.inkSoft,
+                      padding: '6px 14px',
+                      borderRadius: 6,
+                      cursor: isActive ? 'default' : 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: 'Inter, sans-serif',
+                      transition: 'background 120ms ease, color 120ms ease',
+                    }}
+                  >
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+            {snapshots.length > 0 && (
+              <button onClick={resetAll} style={{ ...btnGhost, color: '#b91c1c' }}>
+                <RefreshCw size={14} /> Reset
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {(error || info) && (
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '12px 28px 0' }}>
+          {error && <Notification kind="error" onClose={() => setError(null)}>{error}</Notification>}
+          {info && <Notification kind="success" onClose={() => setInfo(null)}>{info}</Notification>}
+        </div>
+      )}
+
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '28px', display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: 24 }}>
+        {/* SIDEBAR */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <section style={cardStyle}>
+            <SectionTitle>Upload Snapshot</SectionTitle>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+              onClick={() => fileInputRef.current?.click()}
+              style={{ border: `2px dashed ${dragOver ? C.accent : C.borderStrong}`, background: dragOver ? C.accentSoft : C.subtle, borderRadius: 8, padding: '24px 16px', textAlign: 'center', cursor: 'pointer', transition: 'all 150ms' }}
+            >
+              <Upload size={22} color={C.accent} style={{ marginBottom: 8 }} />
+              <div style={{ fontSize: 13, color: C.inkSoft, fontWeight: 500 }}>Drag CSV here or click</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>Multiple files supported</div>
+            </div>
+            <input ref={fileInputRef} type="file" accept=".csv,text/csv" multiple style={{ display: 'none' }}
+              onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }} />
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+              Date from filename, e.g. <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>shops_export_20260428_150913.csv</span>
+            </div>
+          </section>
+
+          {latestImportReport && (
+            <section style={{ ...cardStyle, padding: 14 }}>
+              <ImportDiagnosis report={latestImportReport} />
+            </section>
+          )}
+
+          {sorted.length > 0 && (
+            <section style={cardStyle}>
+              <SectionTitle>Snapshots <span style={{ color: C.muted, fontWeight: 400 }}>({sorted.length})</span></SectionTitle>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 260, overflowY: 'auto' }}>
+                {[...sorted].reverse().map((s, idx) => (
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: idx === 0 ? C.accentSoft : C.subtle, borderRadius: 6, fontSize: 12 }}>
+                    <Calendar size={13} color={idx === 0 ? C.accent : C.muted} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{formatDateTime(s.snapshotAt)}</div>
+                      <div style={{ color: C.muted, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.count} shops · {s.fileName}</div>
+                    </div>
+                    <button onClick={() => removeSnapshot(s.id)} style={iconBtn}><Trash2 size={13} /></button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {availableYears.length > 0 && (
+            <section style={cardStyle}>
+              <SectionTitle>Filter: Creation Year</SectionTitle>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative', overflow: 'visible' }}>
+                <button
+                  onClick={() => setMonthFilter('ALL')}
+                  onMouseEnter={() => setHoveredYear(null)}
+                  style={{
+                    ...filterBtn,
+                    background: monthFilter === 'ALL' ? C.ink : 'transparent',
+                    color: monthFilter === 'ALL' ? C.card : C.inkSoft,
+                    borderColor: monthFilter === 'ALL' ? C.ink : C.borderStrong,
+                  }}
+                >All</button>
+                {availableYears.map(year => {
+                  const isYearActive = monthFilter === year || monthFilter.startsWith(year + '-');
+                  const months = availableYearsMap[year] || [];
+                  return (
+                    <div
+                      key={year}
+                      style={{ position: 'relative' }}
+                      onMouseEnter={() => setHoveredYear(year)}
+                      onMouseLeave={() => setHoveredYear(prev => (prev === year ? null : prev))}
+                    >
+                      <button
+                        onClick={() => setMonthFilter(year)}
+                        style={{
+                          ...filterBtn,
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: isYearActive ? C.ink : 'transparent',
+                          color: isYearActive ? C.card : C.inkSoft,
+                          borderColor: isYearActive ? C.ink : C.borderStrong,
+                        }}
+                      >
+                        <span>{year}</span>
+                        <span style={{ fontSize: 10, opacity: 0.7 }}>▸</span>
+                      </button>
+                      {hoveredYear === year && (
+                        <div
+                          onMouseEnter={() => setHoveredYear(year)}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: '100%',
+                            marginLeft: 6,
+                            minWidth: 170,
+                            background: C.card,
+                            border: `1px solid ${C.borderStrong}`,
+                            borderRadius: 6,
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                            padding: 6,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                            zIndex: 50,
+                          }}
+                        >
+                          <button
+                            onClick={() => setMonthFilter(year)}
+                            style={{
+                              ...filterBtn,
+                              background: monthFilter === year ? C.ink : 'transparent',
+                              color: monthFilter === year ? C.card : C.inkSoft,
+                              borderColor: monthFilter === year ? C.ink : C.borderStrong,
+                            }}
+                          >Whole year</button>
+                          {months.map(m => {
+                            const monthIdx = parseInt(m.substring(5, 7), 10) - 1;
+                            const active = monthFilter === m;
+                            return (
+                              <button
+                                key={m}
+                                onClick={() => setMonthFilter(m)}
+                                style={{
+                                  ...filterBtn,
+                                  background: active ? C.ink : 'transparent',
+                                  color: active ? C.card : C.inkSoft,
+                                  borderColor: active ? C.ink : C.borderStrong,
+                                }}
+                              >{MONTH_NAMES_EN[monthIdx]}</button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </aside>
+
+        {/* MAIN */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {sorted.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <>
+              {monthFilter !== 'ALL' && (
+                <div style={{ padding: '10px 14px', background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 6, fontSize: 13, color: C.accent, fontWeight: 500 }}>
+                  Filter: <strong>{formatFilterLabel(monthFilter)}</strong> · {filteredShops.length} shops
+                  <button onClick={() => setMonthFilter('ALL')} style={{ marginLeft: 8, background: 'transparent', border: 'none', color: C.accent, cursor: 'pointer', fontWeight: 600 }}>× reset</button>
+                </div>
+              )}
+
+              {/* KPIs */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                <KpiTile icon={<Clock size={16} />} label="In Trial" value={currentCounts.TRIAL_STARTED} color={STATUS_META.TRIAL_STARTED.color} bg={STATUS_META.TRIAL_STARTED.bg} />
+                <KpiTile icon={<CheckCircle2 size={16} />} label="Active" value={currentCounts.ACTIVE} color={STATUS_META.ACTIVE.color} bg={STATUS_META.ACTIVE.bg} />
+                <KpiTile icon={<XCircle size={16} />} label="Trial Ended" value={currentCounts.TRIAL_ENDED} color={STATUS_META.TRIAL_ENDED.color} bg={STATUS_META.TRIAL_ENDED.bg} />
+                <KpiTile icon={<AlertTriangle size={16} />} label="Payment Failed" value={currentCounts.PAYMENT_FAILED} color={STATUS_META.PAYMENT_FAILED.color} bg={STATUS_META.PAYMENT_FAILED.bg} />
+              </div>
+
+              {/* TRIAL-KOHORTE */}
+              <section style={cardStyle}>
+                {/* Header mit Conversion-Rates */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>
+                      Trial Cohort {monthFilter !== 'ALL' && <span style={{ fontSize: 14, color: C.muted, fontWeight: 400 }}>· {formatFilterLabel(monthFilter)}</span>}
+                    </h2>
+                    <p style={{ color: C.muted, fontSize: 13, margin: '4px 0 0 0' }}>
+                      {trialCohort.total} shop{trialCohort.total !== 1 ? 's' : ''} · {TRIAL_DURATION_DAYS}-day trial
+                    </p>
+                  </div>
+                  {totalRate !== null && (
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: STATUS_META.ACTIVE.color, fontWeight: 600 }}>Total Conversion</div>
+                        <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 28, fontWeight: 700, color: STATUS_META.ACTIVE.color, lineHeight: 1 }}>{totalRate.toFixed(1)}%</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>{totalActive} of {trialCohort.total}</div>
+                        <div style={{ fontSize: 10, color: C.muted, marginTop: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <span style={{ background: C.surface2, borderRadius: 4, padding: '1px 5px', fontWeight: 500 }}>Since April 2026</span>
+                          <span title="Shops created before April 2026 are excluded — tracking data is only reliable from that date onwards." style={{ cursor: 'help', opacity: 0.6 }}>ⓘ</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <CohortBar
+                    icon={<Zap size={12} />}
+                    label="Active"
+                    count={totalActive}
+                    total={trialCohort.total}
+                    color={STATUS_META.ACTIVE.color}
+                    bold
+                  />
+                  {/* Separator */}
+                  <div style={{ borderTop: `1px solid ${C.border}`, margin: '4px 0' }} />
+                  {/* Still in TRIAL_ENDED */}
+                  <CohortBar
+                    label="Still in TRIAL_ENDED (potential rescue)"
+                    count={trialCohort.stillTrialEnded}
+                    total={trialCohort.total}
+                    color={STATUS_META.TRIAL_ENDED.color}
+                  />
+                  {/* Still in trial */}
+                  <CohortBar
+                    label="Still in Trial"
+                    count={trialCohort.stillTrial}
+                    total={trialCohort.total}
+                    color={STATUS_META.TRIAL_STARTED.color}
+                  />
+                  {trialCohort.paymentFailed > 0 && (
+                    <CohortBar
+                      label="Payment Failed"
+                      count={trialCohort.paymentFailed}
+                      total={trialCohort.total}
+                      color={STATUS_META.PAYMENT_FAILED.color}
+                    />
+                  )}
+                  {trialCohort.other > 0 && (
+                    <CohortBar label="Not Converted/Deleted" count={trialCohort.other} total={trialCohort.total} color={STATUS_META.PAYMENT_FAILED.color} />
+                  )}
+                </div>
+
+                {/* Rescue-Hinweis wenn es "Noch in TRIAL_ENDED" gibt */}
+                {trialCohort.stillTrialEnded > 0 && (
+                  <div style={{ marginTop: 14, padding: 10, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, fontSize: 12, color: '#92400e', lineHeight: 1.5, display: 'flex', gap: 8 }}>
+                    <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span><strong>{trialCohort.stillTrialEnded} shop{trialCohort.stillTrialEnded > 1 ? 's' : ''}</strong> in TRIAL_ENDED — may still convert.</span>
+                  </div>
+                )}
+              </section>
+
+              {/* STATUS ÜBER ZEIT */}
+              {sorted.length >= 2 && monthFilter === 'ALL' && (
+                <section style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: '0 0 4px 0', fontWeight: 600 }}>Status Over Time</h2>
+                  <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px 0' }}>Shops per status in each snapshot.</p>
+                  <div style={{ height: 280 }}>
+                    <ResponsiveContainer>
+                      <LineChart data={timeSeries} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
+                        <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                        <XAxis dataKey="date" stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} />
+                        <YAxis stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} />
+                        <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} labelStyle={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 600 }} />
+                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} iconType="circle" />
+                        {STATUS_ORDER.map(st => (
+                          <Line key={st} type="monotone" dataKey={st} stroke={statusMeta(st).color} strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} name={statusMeta(st).label} />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </section>
+              )}
+
+              {/* TRIAL-STARTS PRO MONAT / WOCHE */}
+              {trialStarts.total > 0 && (() => {
+                const isSingleMonth = /^\d{4}-\d{2}$/.test(monthFilter);
+                const series = isSingleMonth
+                  ? trialStarts.weekSeries
+                  : (trialStartsGranularity === 'month' ? trialStarts.monthSeries : trialStarts.weekSeries);
+                const renderDelta = (delta) => {
+                  if (delta === null || delta === undefined || !Number.isFinite(delta)) return <span style={{ color: C.muted }}>—</span>;
+                  const up = delta >= 0;
+                  const color = delta === 0 ? C.muted : (up ? STATUS_META.ACTIVE.color : STATUS_META.PAYMENT_FAILED.color);
+                  const arrow = delta === 0 ? '·' : (up ? '▲' : '▼');
+                  return <span style={{ color }}>{arrow} {Math.abs(delta).toFixed(1)}%</span>;
+                };
+                const tile = (label, value, sub) => (
+                  <div style={{ padding: 14, background: C.subtle, border: `1px solid ${C.border}`, borderRadius: 6 }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: C.muted, fontWeight: 600, marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 28, fontWeight: 700, color: C.ink, lineHeight: 1 }}>{value}</div>
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 4, fontFamily: 'JetBrains Mono, monospace' }}>{sub}</div>
+                  </div>
+                );
+                return (
+                  <section style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+                      <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Trial Starts</h2>
+                      {!isSingleMonth && (
+                        <div role="tablist" aria-label="Select granularity" style={{ display: 'inline-flex', border: `1px solid ${C.borderStrong}`, borderRadius: 8, padding: 3, background: C.subtle }}>
+                          {[{ id: 'month', label: 'Per Month' }, { id: 'week', label: 'Per Week' }].map(opt => {
+                            const isActive = trialStartsGranularity === opt.id;
+                            return (
+                              <button key={opt.id} role="tab" aria-selected={isActive} onClick={() => setTrialStartsGranularity(opt.id)} style={{
+                                border: 'none', background: isActive ? C.accent : 'transparent', color: isActive ? '#fff' : C.inkSoft,
+                                padding: '5px 12px', borderRadius: 6, cursor: isActive ? 'default' : 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Inter, sans-serif',
+                              }}>{opt.label}</button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <p style={{ color: C.muted, fontSize: 13, margin: '0 0 16px 0' }}>When were new trial shops created? Source: <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>created_at</code>.</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+                      {!isSingleMonth && tile('This month', trialStarts.thisMonth, <>{renderDelta(trialStarts.monthDelta)} vs. last month</>)}
+                      {tile('This week', trialStarts.thisWeek, <>{renderDelta(trialStarts.weekDelta)} vs. last week</>)}
+                      {!isSingleMonth && tile('Avg per month', trialStarts.monthsAvg.toFixed(1), `across ${trialStarts.monthSeries.length} month${trialStarts.monthSeries.length !== 1 ? 's' : ''}`)}
+                      {tile('Avg per week', trialStarts.weeksAvg.toFixed(1), `across ${trialStarts.weekSeries.length} week${trialStarts.weekSeries.length !== 1 ? 's' : ''}`)}
+                    </div>
+
+                    <div style={{ height: 260 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={series} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+                          <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                          <XAxis dataKey="key" stroke={C.muted} tick={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} interval="preserveStartEnd" />
+                          <YAxis stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} allowDecimals={false} />
+                          <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} formatter={(value) => [value, 'Trial Starts']} />
+                          <Bar dataKey="count" fill={STATUS_META.TRIAL_STARTED.color} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </section>
+                );
+              })()}
+
+              {/* LOGIN-AKTIVITÄT DER SHOP-OWNER */}
+              {loginActivity.total > 0 && (() => {
+                const buckets = [
+                  { id: 'active',   label: 'Active (≤ 30 days)',          count: loginActivity.active,   color: STATUS_META.ACTIVE.color,         bg: STATUS_META.ACTIVE.bg },
+                  { id: 'inactive', label: 'Inactive (30–90 days)',       count: loginActivity.inactive, color: '#b45309',                        bg: '#fef3c7' },
+                  { id: 'lost',     label: 'Sleeping', count: loginActivity.lost,     color: STATUS_META.PAYMENT_FAILED.color, bg: STATUS_META.PAYMENT_FAILED.bg },
+                ];
+                const pct = (n) => loginActivity.total > 0 ? (n / loginActivity.total * 100) : 0;
+                const refLabel = loginActivity.referenceDate
+                  ? loginActivity.referenceDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                  : '—';
+                return (
+                  <section style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+                      <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Shop Owner Login Activity</h2>
+                      <div style={{ fontSize: 11, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                        Reference date: <strong style={{ color: C.ink }}>{refLabel}</strong> · {loginActivity.total} shop{loginActivity.total !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px 0' }}>
+                      When did shop owners last log in? Active = at least one login in the last 30 days.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+                      {buckets.map(b => (
+                        <div key={b.id} style={{ padding: 14, background: b.bg, border: `1px solid ${b.color}33`, borderRadius: 6 }}>
+                          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: b.color, fontWeight: 600, marginBottom: 4 }}>{b.label}</div>
+                          <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 28, fontWeight: 700, color: b.color, lineHeight: 1 }}>{b.count}</div>
+                          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, fontFamily: 'JetBrains Mono, monospace' }}>{pct(b.count).toFixed(1)}%</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ height: 220 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={buckets} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+                          <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                          <XAxis dataKey="label" stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} />
+                          <YAxis stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} allowDecimals={false} />
+                          <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} formatter={(value) => [value, 'Shops']} />
+                          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                            {buckets.map((b, i) => <Cell key={i} fill={b.color} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div style={{ marginTop: 12, display: 'flex', alignItems: 'flex-start', gap: 8, padding: 10, background: C.subtle, borderRadius: 6, fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                      <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                      Buckets: Active = last login ≤ 30 days · Inactive = 30–90 days · Lost = &gt; 90 days or never logged in.
+                      {loginActivity.neverLoggedIn > 0 && (
+                        <> Of those, <strong style={{ color: C.ink }}>{loginActivity.neverLoggedIn}</strong> shop{loginActivity.neverLoggedIn !== 1 ? 's' : ''} without any login record.</>
+                      )}
+                    </div>
+                  </section>
+                );
+              })()}
+
+              {/* CONVERSION TIMING */}
+              {conversionStats && (
+                <section style={cardStyle}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+                    <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Conversion Timing</h2>
+                    <div style={{ fontSize: 11, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                      Median: <strong style={{ color: C.ink }}>{conversionStats.median}</strong> days · Avg {conversionStats.avg}
+                    </div>
+                  </div>
+                  <p style={{ color: C.muted, fontSize: 13, margin: '0 0 16px 0' }}>
+                    When do shops become active?
+                  </p>
+                  <div style={{ height: 220 }}>
+                    <ResponsiveContainer>
+                      <BarChart data={conversionBuckets} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+                        <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                        <XAxis dataKey="label" stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} />
+                        <YAxis stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} formatter={(value) => [value, 'Active']} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={() => 'Active'} />
+                        <Bar dataKey="active" fill={STATUS_META.ACTIVE.color} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{ marginTop: 12, display: 'flex', alignItems: 'flex-start', gap: 8, padding: 10, background: C.subtle, borderRadius: 6, fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                    <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                    Estimated from snapshot midpoints. Current interval: ~{avgSnapshotInterval(sorted)} days. More frequent snapshots improve accuracy.
+                  </div>
+                </section>
+              )}
+
+              {/* SHOP VS WEBSITE */}
+              {packageDistribution.total > 0 && (
+                <section style={cardStyle}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+                    <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Product Category</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                      {activeDataset === 'epages' && (
+                        <div role="tablist" aria-label="Select view" style={{ display: 'inline-flex', border: `1px solid ${C.borderStrong}`, borderRadius: 8, padding: 3, background: C.subtle }}>
+                          {[{ id: 'total', label: 'Total' }, { id: 'country', label: 'By Country' }].map(opt => {
+                            const isActive = packageViewMode === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                role="tab"
+                                aria-selected={isActive}
+                                onClick={() => setPackageViewMode(opt.id)}
+                                style={{
+                                  border: 'none',
+                                  background: isActive ? C.accent : 'transparent',
+                                  color: isActive ? '#fff' : C.inkSoft,
+                                  padding: '5px 12px',
+                                  borderRadius: 6,
+                                  cursor: isActive ? 'default' : 'pointer',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  fontFamily: 'Inter, sans-serif',
+                                }}
+                              >{opt.label}</button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {activeDataset === 'epages' && packageViewMode === 'country' && (
+                        <div role="tablist" aria-label="Select bar layout" style={{ display: 'inline-flex', border: `1px solid ${C.borderStrong}`, borderRadius: 8, padding: 3, background: C.subtle }}>
+                          {[{ id: 'stacked', label: 'Stacked' }, { id: 'grouped', label: 'Side by side' }].map(opt => {
+                            const isActive = countryBarLayout === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                role="tab"
+                                aria-selected={isActive}
+                                onClick={() => setCountryBarLayout(opt.id)}
+                                style={{
+                                  border: 'none',
+                                  background: isActive ? C.accent : 'transparent',
+                                  color: isActive ? '#fff' : C.inkSoft,
+                                  padding: '5px 12px',
+                                  borderRadius: 6,
+                                  cursor: isActive ? 'default' : 'pointer',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  fontFamily: 'Inter, sans-serif',
+                                }}
+                              >{opt.label}</button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                        Shops: <strong style={{ color: C.ink }}>{packageDistribution.shop}</strong> · Websites: <strong style={{ color: C.ink }}>{packageDistribution.website}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <p style={{ color: C.muted, fontSize: 13, margin: '0 0 16px 0' }}>
+                    {activeDataset === 'epages' && packageViewMode === 'country'
+                      ? 'Distribution by country. Shop = Store - …, Website = Website - … and OLD: Website - DE.'
+                      : dataset.packageSubtitle}
+                  </p>
+                  <div style={{ height: 260 }}>
+                    <ResponsiveContainer>
+                      {activeDataset === 'epages' && packageViewMode === 'country' ? (
+                        <BarChart data={packageDistribution.countryData} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+                          <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                          <XAxis dataKey="name" stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} />
+                          <YAxis stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} allowDecimals={false} />
+                          <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="Shop" stackId={countryBarLayout === 'stacked' ? 'a' : undefined} fill={STATUS_META.ACTIVE.color} radius={countryBarLayout === 'stacked' ? [0, 0, 0, 0] : [4, 4, 0, 0]} />
+                          <Bar dataKey="Website" stackId={countryBarLayout === 'stacked' ? 'a' : undefined} fill={STATUS_META.TRIAL_STARTED.color} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      ) : (
+                        <BarChart data={packageDistribution.data} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+                          <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                          <XAxis dataKey="name" stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} />
+                          <YAxis stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} allowDecimals={false} />
+                          <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} formatter={(value, _n, p) => [value, p?.payload?.name]} />
+                          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                            {packageDistribution.data.map((entry, i) => (
+                              <Cell key={i} fill={entry.name === 'Shop' ? STATUS_META.ACTIVE.color : STATUS_META.TRIAL_STARTED.color} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      )}
+                    </ResponsiveContainer>
+                  </div>
+                </section>
+              )}
+
+              {/* CONVERSION RATE NACH PRODUKTKATEGORIE */}
+              {packageDistribution.total > 0 && (() => {
+                const rate = (b) => b.total > 0 ? ((b.directActive + b.rescuedActive) / b.total * 100) : 0;
+                const cats = [
+                  { id: 'Shop', label: 'Shop', color: STATUS_META.ACTIVE.color, bg: STATUS_META.ACTIVE.bg, data: conversionByCategory.Shop },
+                  { id: 'Website', label: 'Website', color: STATUS_META.TRIAL_STARTED.color, bg: STATUS_META.TRIAL_STARTED.bg, data: conversionByCategory.Website },
+                ];
+                const chartData = cats.map(c => ({ name: c.label, rate: Number(rate(c.data).toFixed(1)), converted: c.data.directActive + c.data.rescuedActive, total: c.data.total, color: c.color }));
+                const hasAny = cats.some(c => c.data.total > 0);
+                if (!hasAny) return null;
+                return (
+                  <section style={cardStyle}>
+                    <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: '0 0 4px 0', fontWeight: 600 }}>Conversion Rate by Product Category</h2>
+                    <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px 0' }}>Trial cohort split by Shop and Website. Conversion = directly active + rescued from TRIAL_ENDED.</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 20 }}>
+                      {cats.map(c => {
+                        const conv = c.data.directActive + c.data.rescuedActive;
+                        const r = rate(c.data);
+                        return (
+                          <div key={c.id} style={{ padding: 16, background: c.bg, border: `1px solid ${c.color}33`, borderRadius: 6 }}>
+                            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: c.color, fontWeight: 600, marginBottom: 6 }}>{c.label}</div>
+                            <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 32, fontWeight: 700, color: c.color, lineHeight: 1 }}>{r.toFixed(1)}%</div>
+                            <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 6, fontFamily: 'JetBrains Mono, monospace' }}>{conv} / {c.data.total} converted</div>
+                            <div style={{ fontSize: 11, color: C.muted, marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>direct {c.data.directActive} · rescued {c.data.rescuedActive}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ height: 180 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 30, bottom: 10, left: 20 }}>
+                          <CartesianGrid stroke={C.border} strokeDasharray="2 4" horizontal={false} />
+                          <XAxis type="number" domain={[0, 100]} stroke={C.muted} tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: C.muted }} tickLine={false} axisLine={{ stroke: C.border }} unit="%" />
+                          <YAxis type="category" dataKey="name" stroke={C.muted} tick={{ fontSize: 12, fontFamily: 'Inter, sans-serif', fill: C.ink }} tickLine={false} axisLine={{ stroke: C.border }} width={80} />
+                          <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12 }} formatter={(_v, _n, p) => [`${p.payload.rate}% (${p.payload.converted} / ${p.payload.total})`, 'Conversion']} />
+                          <Bar dataKey="rate" radius={[0, 4, 4, 0]}>
+                            {chartData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </section>
+                );
+              })()}
+
+              {/* ÜBERGÄNGE */}
+              {sorted.length >= 2 && (
+                <section style={cardStyle}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Status Transitions</h2>
+                      <p style={{ color: C.muted, fontSize: 13, margin: '4px 0 0 0' }}>All detected changes between snapshots.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {[
+                        { id: 'ALL',     label: `All (${transitionCounts.all})` },
+                        { id: 'activated', label: `→ Active (${transitionCounts.activated})` },
+                        { id: 'toEnded', label: `→ Ended (${transitionCounts.toEnded})` },
+                      ].map(opt => (
+                        <button key={opt.id} onClick={() => setTransitionFilter(opt.id)} style={{
+                          ...chipBtn,
+                          background: transitionFilter === opt.id ? C.ink : 'transparent',
+                          color: transitionFilter === opt.id ? C.card : C.inkSoft,
+                          borderColor: transitionFilter === opt.id ? C.ink : C.borderStrong,
+                        }}>{opt.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {filteredTransitions.length === 0 ? (
+                    <div style={{ padding: 16, background: C.subtle, borderRadius: 6, fontSize: 13, color: C.muted, textAlign: 'center' }}>
+                      No transitions in this selection.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 400, overflowY: 'auto' }}>
+                      {filteredTransitions.map((t, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: C.subtle, borderRadius: 6, fontSize: 12, borderLeft: t.to === 'ACTIVE' ? `3px solid ${STATUS_META.ACTIVE.color}` : 'none' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t.shopUrl || t.customerId}
+                            </div>
+                            <div style={{ color: C.muted, fontSize: 11, fontFamily: 'JetBrains Mono, monospace', marginTop: 2 }}>
+                              {t.package} · {formatDateTime(t.at)}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                            <StatusBadge status={t.from} />
+                            <ArrowRight size={14} color={C.mutedSoft} />
+                            <StatusBadge status={t.to} highlight />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </>
+          )}
+        </section>
+      </main>
+
+      <footer style={{ maxWidth: 1400, margin: '0 auto', padding: '0 28px 28px', fontSize: 11, color: C.muted, textAlign: 'center' }}>
+        Data is stored locally in your browser · Snapshots identified by filename
+      </footer>
+    </div>
+  );
+}
+
+// ----- helpers -----
+function avgSnapshotInterval(snapshots) {
+  if (snapshots.length < 2) return '?';
+  const diffs = [];
+  for (let i = 1; i < snapshots.length; i++)
+    diffs.push((new Date(snapshots[i].snapshotAt) - new Date(snapshots[i - 1].snapshotAt)) / 86400000);
+  return (diffs.reduce((a, b) => a + b, 0) / diffs.length).toFixed(0);
+}
+
+function createImportReport(files, createdAt = new Date().toISOString()) {
+  const totals = files.reduce((acc, f) => {
+    acc.files++;
+    acc.rawRows += f.rawRows || 0;
+    acc.importedRows += f.importedRows || 0;
+    acc.skippedRows += f.skippedRows || 0;
+    acc.warnings += f.warnings?.length || 0;
+    acc.errors += f.errors?.length || 0;
+    if (f.outcome === 'added') acc.added++;
+    if (f.outcome === 'skipped') acc.skipped++;
+    if (f.outcome === 'failed' || f.status === 'error') acc.failed++;
+    return acc;
+  }, { files: 0, added: 0, skipped: 0, failed: 0, rawRows: 0, importedRows: 0, skippedRows: 0, warnings: 0, errors: 0 });
+
+  return {
+    id: `import-${createdAt}`,
+    createdAt,
+    files,
+    totals,
+    status: totals.failed ? 'error' : totals.warnings ? 'warning' : 'ok',
+  };
+}
+
+function analyzeImportFile(file, results, existingSnapshots, dateInfo) {
+  const fields = results.meta.fields || [];
+  const rows = Array.isArray(results.data) ? results.data : [];
+  const missingColumns = REQUIRED_IMPORT_COLUMNS.filter(col => !fields.includes(col));
+  const isDuplicateFile = existingSnapshots.some(s => s.fileName === file.name && s.count === rows.length);
+  const warnings = [];
+  const errors = [];
+  const statusCounts = {};
+  const unknownStatusCounts = {};
+  const customerCounts = new Map();
+  const shops = [];
+  let missingCustomerIds = 0;
+  let missingStatuses = 0;
+  let skippedRows = 0;
+  let emptyCreatedAt = 0;
+  let invalidCreatedAt = 0;
+
+  if (missingColumns.length) {
+    errors.push(`Required columns missing: ${missingColumns.join(', ')}`);
+  } else {
+    rows.forEach(row => {
+      const customerId = String(row.stripe_customer_id || '').trim();
+      const status = String(row.stripe_subscription_status || '').trim().toUpperCase();
+      const createdAt = String(row.created_at || '').trim();
+      const loginEmail = String(row.login_email || '').trim().toLowerCase();
+
+      // Testshops (ePages-interne Accounts) ausschließen
+      if (loginEmail.endsWith('@epages.com')) {
+        skippedRows++;
+        return;
+      }
+
+      if (!customerId) missingCustomerIds++;
+      if (!status) missingStatuses++;
+      if (!customerId || !status) {
+        skippedRows++;
+        return;
+      }
+
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      if (!KNOWN_IMPORT_STATUSES.has(status)) {
+        unknownStatusCounts[status] = (unknownStatusCounts[status] || 0) + 1;
+      }
+      customerCounts.set(customerId, (customerCounts.get(customerId) || 0) + 1);
+      if (!createdAt) emptyCreatedAt++;
+      else if (Number.isNaN(Date.parse(createdAt))) invalidCreatedAt++;
+
+      shops.push({
+        customerId,
+        shopUrl: String(row.shop_url || '').trim(),
+        status,
+        package: String(row.package_name || '').trim(),
+        createdAt,
+        lastLogin: String(row.last_login || '').trim(),
+        loginEmail,
+      });
+    });
+  }
+
+  const duplicateCounts = [...customerCounts.values()].filter(count => count > 1);
+  const duplicateCustomerIds = duplicateCounts.length;
+  const duplicateCustomerRows = duplicateCounts.reduce((sum, count) => sum + count - 1, 0);
+  const unknownStatusTotal = Object.values(unknownStatusCounts).reduce((sum, count) => sum + count, 0);
+
+  if (isDuplicateFile) warnings.push('Filename already imported.');
+  if (!missingColumns.length && rows.length === 0) warnings.push('File contains no data rows.');
+  if (!missingColumns.length && shops.length === 0) warnings.push('No valid shops found.');
+  if (skippedRows) warnings.push(`${skippedRows} row${skippedRows > 1 ? 's' : ''} skipped due to missing Customer ID or status.`);
+  if (duplicateCustomerIds) warnings.push(`${duplicateCustomerIds} duplicate Customer ID${duplicateCustomerIds > 1 ? 's' : ''} found (${duplicateCustomerRows} extra row${duplicateCustomerRows > 1 ? 's' : ''}).`);
+  if (unknownStatusTotal) warnings.push(`Unknown status values: ${formatStatusCounts(unknownStatusCounts)}.`);
+  if (invalidCreatedAt) warnings.push(`${invalidCreatedAt} created_at value${invalidCreatedAt > 1 ? 's' : ''} could not be parsed as date.`);
+  if (!missingColumns.length && dateInfo.source !== 'filename-timestamp') {
+    warnings.push(`Snapshot date taken from ${dateSourceLabel(dateInfo.source)}.`);
+  }
+
+  return {
+    shops,
+    isDuplicateFile,
+    diagnostic: {
+      fileName: file.name,
+      status: warnings.length ? 'warning' : 'ok',
+      outcome: 'pending',
+      snapshotAt: dateInfo.value,
+      dateSource: dateInfo.source,
+      columns: fields,
+      missingColumns,
+      rawRows: rows.length,
+      importedRows: shops.length,
+      skippedRows,
+      missingCustomerIds,
+      missingStatuses,
+      emptyCreatedAt,
+      invalidCreatedAt,
+      duplicateCustomerIds,
+      duplicateCustomerRows,
+      unknownStatusCounts,
+      statusCounts,
+      warnings,
+      errors,
+    },
+  };
+}
+
+function createParseErrorDiagnostic(file, err) {
+  return {
+    fileName: file.name,
+    status: 'error',
+    outcome: 'failed',
+    snapshotAt: null,
+    dateSource: 'none',
+    columns: [],
+    missingColumns: [],
+    rawRows: 0,
+    importedRows: 0,
+    skippedRows: 0,
+    missingCustomerIds: 0,
+    missingStatuses: 0,
+    emptyCreatedAt: 0,
+    invalidCreatedAt: 0,
+    duplicateCustomerIds: 0,
+    duplicateCustomerRows: 0,
+    unknownStatusCounts: {},
+    statusCounts: {},
+    warnings: [],
+    errors: [`Parse error: ${err.message}`],
+  };
+}
+
+function formatStatusCounts(counts) {
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([status, count]) => `${status} (${count})`)
+    .join(', ');
+}
+
+function dateSourceLabel(source) {
+  if (source === 'filename-date') return 'filename without time';
+  if (source === 'file-last-modified') return 'file modification date';
+  if (source === 'upload-time') return 'upload time';
+  return 'filename';
+}
+
+function getSnapshotDateInfo(filename, fileLastModified) {
+  const m = filename.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})[_-](\d{2})[-_]?(\d{2})[-_]?(\d{2})/);
+  if (m) {
+    const [, y, mo, d, h, mi, s] = m;
+    const dt = new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}`);
+    if (!isNaN(dt)) return { value: dt.toISOString(), source: 'filename-timestamp' };
+  }
+  const m2 = filename.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/);
+  if (m2) {
+    const [, y, mo, d] = m2;
+    const dt = new Date(`${y}-${mo}-${d}T00:00:00`);
+    if (!isNaN(dt)) return { value: dt.toISOString(), source: 'filename-date' };
+  }
+  if (fileLastModified) return { value: new Date(fileLastModified).toISOString(), source: 'file-last-modified' };
+  return { value: new Date().toISOString(), source: 'upload-time' };
+}
+
+function parseSnapshotDate(filename, fileLastModified) {
+  return getSnapshotDateInfo(filename, fileLastModified).value;
+}
+
+function formatDateTime(iso) {
+  try { return new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  catch { return iso; }
+}
+function formatShortDate(iso) {
+  try { return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }); }
+  catch { return iso; }
+}
+
+// ----- components -----
+function SectionTitle({ children, style }) {
+  return <div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: C.muted, fontWeight: 600, marginBottom: 12, ...style }}>{children}</div>;
+}
+
+function KpiTile({ icon, label, value, color, bg }) {
+  return (
+    <div style={{ ...cardStyle, padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color, marginBottom: 8 }}>
+        <div style={{ background: bg, padding: 4, borderRadius: 4, display: 'flex' }}>{icon}</div>
+        <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>{label}</span>
+      </div>
+      <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 36, fontWeight: 700, color: C.ink, lineHeight: 1 }}>{value}</div>
+    </div>
+  );
+}
+
+function ImportDiagnosis({ report }) {
+  const cfg = report.status === 'error'
+    ? { icon: <FileWarning size={15} />, label: 'Error', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' }
+    : report.status === 'warning'
+      ? { icon: <FileWarning size={15} />, label: 'Notices', color: '#92400e', bg: '#fffbeb', border: '#fde68a' }
+      : { icon: <FileCheck2 size={15} />, label: 'OK', color: STATUS_META.ACTIVE.color, bg: STATUS_META.ACTIVE.bg, border: '#bbf7d0' };
+  const messages = report.files.flatMap(file => [...(file.errors || []), ...(file.warnings || [])]);
+  const summaryMessage = messages[0] || null;
+
+  return (
+    <>
+      <SectionTitle style={{ marginBottom: 8 }}>Import Diagnostics</SectionTitle>
+      <div style={{ border: `1px solid ${cfg.border}`, background: cfg.bg, borderRadius: 6, padding: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: cfg.color, fontSize: 12, fontWeight: 600 }}>
+          {cfg.icon}
+          <span>{cfg.label}</span>
+          <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 500 }}>{formatDateTime(report.createdAt)}</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginTop: 8 }}>
+          <DiagnosticMetric label="Rows" value={report.totals.rawRows} />
+          <DiagnosticMetric label="Imported" value={report.totals.importedRows} />
+        </div>
+
+        {report.totals.files > 1 && (
+          <div style={{ marginTop: 8, fontSize: 10, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+            {report.totals.files} files in last import
+          </div>
+        )}
+
+        {summaryMessage && (
+          <div style={{ marginTop: 8, fontSize: 10, color: C.inkSoft, lineHeight: 1.4 }}>
+            {summaryMessage}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function DiagnosticMetric({ label, value }) {
+  return (
+    <div style={{ background: C.subtle, borderRadius: 6, padding: '7px 8px' }}>
+      <div style={{ fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 16, color: C.ink, fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, lineHeight: 1.1 }}>{value}</div>
+    </div>
+  );
+}
+
+function CohortBar({ icon, label, sublabel, count, total, color, bold }) {
+  const pct = total > 0 ? (count / total) * 100 : 0;
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <span style={{ fontSize: 13, color: C.ink, fontWeight: bold ? 600 : 500, display: 'flex', alignItems: 'center', gap: 5 }}>
+          {icon && <span style={{ color }}>{icon}</span>}
+          {label}
+        </span>
+        <span style={{ fontSize: 12, fontFamily: 'JetBrains Mono, monospace', color: C.muted, flexShrink: 0, marginLeft: 12 }}>
+          <strong style={{ color: C.ink }}>{count}</strong> · {pct.toFixed(1)}%
+        </span>
+      </div>
+      {sublabel && <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>{sublabel}</div>}
+      <div style={{ height: 8, background: C.subtle, borderRadius: 4, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: color, transition: 'width 300ms' }} />
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status, highlight }) {
+  const m = statusMeta(status);
+  return (
+    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 4, background: highlight ? m.color : m.bg, color: highlight ? 'white' : m.color, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono, monospace' }}>{m.short}</span>
+  );
+}
+
+function Notification({ kind, children, onClose }) {
+  const cfg = kind === 'error'
+    ? { border: '#fca5a5', bg: '#fef2f2', color: '#b91c1c', icon: <AlertCircle size={16} /> }
+    : { border: '#86efac', bg: '#f0fdf4', color: '#15803d', icon: <CheckCircle2 size={16} /> };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', border: `1px solid ${cfg.border}`, background: cfg.bg, color: cfg.color, borderRadius: 6, fontSize: 13 }}>
+      {cfg.icon} <span>{children}</span>
+      <button onClick={onClose} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex' }}><X size={14} /></button>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <section style={{ ...cardStyle, padding: 64, textAlign: 'center' }}>
+      <Database size={32} color={C.accent} style={{ marginBottom: 12 }} />
+      <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 28, fontWeight: 600, color: C.ink, marginBottom: 8 }}>Upload your first snapshot</div>
+      <div style={{ fontSize: 14, color: C.muted, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
+        Once you have at least two snapshots, transitions and conversions are calculated — including shops "rescued" from TRIAL_ENDED.
+      </div>
+    </section>
+  );
+}
+
+const cardStyle = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 20 };
+const btnGhost = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'transparent', color: C.inkSoft, border: `1px solid ${C.borderStrong}`, borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' };
+const iconBtn = { background: 'transparent', border: 'none', color: C.muted, cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' };
+const chipBtn = { padding: '4px 10px', fontSize: 11, fontWeight: 600, border: '1px solid', borderRadius: 999, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' };
+const filterBtn = { padding: '8px 12px', fontSize: 12, fontWeight: 500, border: '1px solid', borderRadius: 6, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textAlign: 'left', transition: 'all 120ms' };
+
+    // ── Render ───────────────────────────────────────────────────────
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(SubscriptionDashboard));
+  </script>
+</body>
+</html>
