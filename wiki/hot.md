@@ -1,7 +1,7 @@
 ---
 type: meta
 title: "Hot Cache"
-updated: 2026-06-09T00:00:00
+updated: 2026-06-16T18:00:00
 tags:
   - meta
   - hot-cache
@@ -19,6 +19,8 @@ related:
 Navigation: [[index]] | [[log]] | [[overview]]
 
 ## Last Updated
+
+2026-06-16: **Autoresearch — "Can AI predict which stocks will go up?"** Reframed the user's "tool that tracks what stock WILL go up" prompt into evidence-vs-hype + an honest builder blueprint (scope: real money / own capital). 16 pages filed. Verdict: AI does NOT reliably predict single-stock direction net of costs. Base rates brutal (SPIVA: no fund category beats over 15y; 97% of persistent day traders lose). ML edge real but tiny (~0.4% monthly R², Gu/Kelly/Xiu) and trapped in illiquid microcaps (Sharpe 1.35 VW vs 2.45 EW). Biggest DIY trap = [[Backtest Overfitting]]. LLMs good at reading text, not beating market (look-ahead bias). Defensible uses: factor harvesting, research speed, risk mgmt. If building anyway → [[Honest Stock-Signal Tool Blueprint]] (point-in-time data, purged CV, net-of-cost + ~26% German tax eval, paper-trade first). German real-money note: IBKR has a Python API + self-declare via Anlage KAP. Synthesis: [[Research- Can AI Predict Which Stocks Will Go Up]]. **Built + verified two tools at `tools/honest-signal-lab/`** (ran on real Python installed this session): (1) `overfitting_demo.py` — pure-stdlib Monte Carlo; across 4 base seeds in-sample Sharpe ~0.7 collapses to OOS ~0, deflated ~46% = chance, overfit tool loses to buy-and-hold ~70% of the time. (2) `signal_lab.py` — REAL data via yfinance (Stooq is bot-blocked: JS proof-of-work + "Access denied" even after solving it). Momentum 12-1 + walk-forward HistGBM ML vs buy-and-hold SPY, out-of-sample, net of costs + 26.375% German tax. Result (2014-2024, survivorship-biased universe that should HELP pickers): Momentum +12.1%/SR 0.87 and ML +10.7%/SR 0.68 BOTH LOST to SPY +13.2%/SR 0.92. Honest verdict reinforced. Python at `%LOCALAPPDATA%\Programs\Python\Python312\python.exe` (bare `python` shadowed by Store alias); deps yfinance+scikit-learn installed; `data/` gitignored.
 
 2026-06-16: **PayPal Migration Dashboard tab built** in `.raw/Spreedly_Conversion.html`. New KPI set (Shutdown Versions, Newest Version, Other Legacy, Sleeper, Total, Days to deadline) replacing the binary Spreedly model. Admin-configurable gateway types stored in Supabase `mappings`. Independent `csv-imports/paypal.csv` upload path, separate `ppShops[]` state, per-tab upload timestamps via `updateUploadStrip(tabName)`. Key bug fixed: JS TDZ in `ppRefresh()` silently blocked all rendering — moving `const ppShops=ppDetectShops()` to the first line fixed it. Gateway names still unknown; admin configures on first use. Playbook: [[2026-06-16-paypal-dashboard-build]].
 

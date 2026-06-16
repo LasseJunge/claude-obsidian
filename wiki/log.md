@@ -19,6 +19,16 @@ Navigation: [[index]] | [[hot]] | [[overview]]
 
 Append-only. New entries go at the TOP. Never edit past entries.
 
+## [2026-06-16] autoresearch | Can AI Predict Which Stocks Will Go Up?
+- Rounds: 3 | Searches: ~10 | Pages created: 16
+- Reframed the user's prompt from "tool that tracks what stock WILL go up" → evidence-vs-hype + honest builder blueprint (real money / own capital).
+- Synthesis: [[Research- Can AI Predict Which Stocks Will Go Up]]
+- Concepts: [[Efficient Market Hypothesis]], [[Machine Learning for Asset Pricing]], [[Backtest Overfitting]], [[Alpha Decay and Transaction Costs]], [[LLMs in Investing]], [[Honest Stock-Signal Tool Blueprint]]
+- Entities: [[Marcos Lopez de Prado]], [[Renaissance Technologies]] | Sources: 7 (RFS, AMS, SPIVA, JPM, LLM review, day-trading studies, Buffett bet)
+- Key finding: AI does NOT reliably predict single-stock direction net of costs; ML's edge is ~0.4% monthly R² and trapped in illiquid microcaps; defensible AI uses are factor harvesting, research speed, and risk management — not a "winner picker."
+- Caveat caught: WebFetch of the Gu/Kelly/Xiu PDF returned wrong rounded numbers; corrected via secondary source (0.33–0.40% R²; Sharpe 1.35 VW / 2.45 EW). AMS/SPIVA/Toptal PDFs returned 403 — verified via search summaries + IFA.
+- Follow-up (pure-stdlib backtest-overfitting + deflated-Sharpe demonstrator tool) was offered, started, then user paused; resumed this session.
+
 ## [2026-06-16] save | PayPal Migration Dashboard Build
 - Type: session
 - Location: wiki/meta/2026-06-16-paypal-dashboard-build.md

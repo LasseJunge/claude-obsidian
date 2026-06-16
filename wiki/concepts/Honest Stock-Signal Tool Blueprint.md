@@ -53,6 +53,7 @@ Ranked from sane to delusional:
 - Backtesting: **VectorBT** (fast, vectorized signal research), **Backtrader** (event-driven, realistic), **Zipline/Zipline-Reloaded** (factor research via Pipeline API, legacy Python), **Qlib** (Microsoft, ML-oriented). (confidence: medium)
 - Validation: `mlfinlab`-style purged CV, `skfolio` (CombinatorialPurgedCV), `pypbo` for PBO.
 - Execution/data: **Interactive Brokers API** (Python) for both data and automated orders; paper-trade account first.
+- **Start here:** a pure-stdlib demonstrator lives in this repo at `tools/honest-signal-lab/` — it makes backtest overfitting visible and runs the Deflated Sharpe gate with zero setup. Run it before writing any "real" strategy code. See [[Backtest Overfitting]].
 
 ## Execution & risk discipline
 - **Paper-trade for months** before committing money; live behavior diverges from backtest.

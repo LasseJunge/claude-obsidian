@@ -1,0 +1,6 @@
+# Cached market data (re-fetched on demand; avoid committing Yahoo-sourced data)
+data/
+
+# Python
+__pycache__/
+*.pyc

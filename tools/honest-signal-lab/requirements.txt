@@ -1,0 +1,5 @@
+# Only needed for signal_lab.py (the real-data harness).
+# overfitting_demo.py needs NOTHING beyond the Python standard library.
+yfinance
+scikit-learn
+# pandas and numpy come in as dependencies of the two above.
