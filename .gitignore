@@ -108,7 +108,8 @@ claude-canvas/
 .codex
 
 # immo-agent generated output (regenerated each run from the gitignored immo.json)
-wiki/immo/
+wiki/immo/*
+!wiki/immo/dashboard.html
 
 # User-specific attachments
 _attachments/
