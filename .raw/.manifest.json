@@ -2,8 +2,20 @@
   "version": 1,
   "created": "2026-04-23",
   "description": "Ingest delta tracker and address map for the claude-obsidian vault. Do not hand-edit; wiki-ingest maintains this.",
-  "sources": {},
+  "sources": {
+    ".raw/images/notes-15-06-sage-stripe-2026-06-15.md": {
+      "hash": "3367d1813321ce54130a6b0a828bda67",
+      "ingested_at": "2026-06-15",
+      "pages_created": ["wiki/sources/meeting-2026-06-15-with-Chris.md", "wiki/entities/Sage.md", "wiki/entities/PayPal.md", "wiki/concepts/Base to Now Tracker.md"],
+      "pages_updated": ["wiki/entities/Stripe.md", "wiki/questions/Questions Auto Translate.md", "wiki/index.md", "wiki/hot.md", "wiki/log.md"],
+      "note": "Meeting notes scan (Notes 15.06.pdf). Sources{} history was lost in the 2026-06-16 IDB-restore corruption event; this entry was reconstructed."
+    }
+  },
   "address_map": {
-    "wiki/concepts/DragonScale Memory.md": "c-000001"
+    "wiki/concepts/DragonScale Memory.md": "c-000001",
+    "wiki/sources/meeting-2026-06-15-with-Chris.md": "c-000004",
+    "wiki/entities/Sage.md": "c-000005",
+    "wiki/entities/PayPal.md": "c-000006",
+    "wiki/concepts/Base to Now Tracker.md": "c-000007"
   }
 }

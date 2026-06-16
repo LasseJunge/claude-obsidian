@@ -19,6 +19,78 @@ Navigation: [[index]] | [[hot]] | [[overview]]
 
 Append-only. New entries go at the TOP. Never edit past entries.
 
+## [2026-06-15] save | immo-agent Build Session
+- Type: session
+- Location: wiki/meta/2026-06-15-immo-agent-build-session.md
+- From: building `tools/immo-agent/` — German real-estate + forced-auction monitor (zvg-portal, bank auctions, Kleinanzeigen, ImmoScout24 via CDP-attach)
+- Key insight: IS24 hard-blocks automated browsers; the only free path is attaching over CDP to a real Chrome the user launches. Auctions use a wider region + are exempt from type/price-floor filters; flats get rooms/price/no-newbuild filters. Node, not Python (no Python on this machine).
+
+## [2026-06-15] ingest (corrected/expanded) | Meeting notes — full 2-page meeting
+- Source: `.raw/images/notes-15-06-sage-stripe-2026-06-15.md` (scanned handwriting; original `.raw/Notes 15.06.pdf`, 2 pages)
+- Summary: [[meeting-2026-06-15-with-Chris]]
+- Pages created: [[meeting-2026-06-15-with-Chris]] (c-000004), [[Sage]] (c-000005), [[PayPal]] (c-000006), [[Base to Now Tracker]] (c-000007)
+- Pages updated: [[Stripe]], [[Questions Auto Translate]], [[index]], [[hot]]
+- Key insight: meeting theme is applying the Spreedly tracking pattern to several migrations — Base→Now, PayPal (live ~06-16, deadline 01.01.27), Sage (HTK connector, ~350 Base shops), Stripe; plus an Auto Translate data hand-off via Karsten.
+- Correction: the FIRST ingest only captured page 2 (Sage/Stripe) because the initial render duplicated page 2. Re-rendered from `.raw/Notes 15.06.pdf`; page 1 (Base→Now, Auto Translate, PayPal) added here.
+- Notes: confirmed readings HTK / Kristof / "effort to move" / deadline 01.01.27 / no word before "in the Dashboard" / Auto Translate recipient = **Enzio**. Source note later renamed by user to [[meeting-2026-06-15-with-Chris]]. Address allocator unavailable (no `flock`); addresses assigned manually, counter→7.
+
+## [2026-06-15] save | Churn Growth Styling + Supabase Hardening Session
+- Type: session
+- Location: wiki/meta/2026-06-15-churn-growth-styling-supabase-session.md
+- From: conversation on negative-churn (net growth) styling in the Churn tab and verifying Supabase RLS hardening (writes/reads/storage all authenticated)
+
+## [2026-06-11] autoresearch | AI Agents for Autonomous Tasks + German Real Estate Rent Comparison
+- Rounds: 2
+- Sources found: 5 filed (DataCamp agent comparison, n8n, Piloterr ImmoScout24 API, Destatis/empirica/mietenwatch rent data, German scraping legality)
+- Pages created: [[Research- AI Agents for Autonomous Tasks and German Real Estate Rent Comparison]], [[best-ai-agents-2026-datacamp]], [[n8n-ai-agents]], [[immoscout24-piloterr-api]], [[mietspiegel-data-sources]], [[german-scraping-legality]], [[Agentic Web Scraping Pipeline]]
+- Synthesis: [[Research- AI Agents for Autonomous Tasks and German Real Estate Rent Comparison]]
+- Key finding: Yes on both — n8n (no-code) or ChatGPT Agent can scrape ImmoScout24 (via Piloterr/Apify, Cloudflare-bypassed) and compare €/m² to regional Destatis/Mietspiegel data; blockers are legal (ToS + GDPR on PII) and the lack of a nationwide address-level rent-index API.
+
+## [2026-06-10] save | Dashboard Bug Fixes & Test Setup
+- Type: session
+- Location: wiki/meta/2026-06-10-dashboard-bug-fixes-and-tests.md
+- From: full session fixing 4 bugs in Spreedly + Conversion dashboards, adding Vitest test suite
+
+## [2026-06-10] autoresearch | Data Analytics — Skills, Plugins, and Stack
+- Rounds: 3 | Searches: 8 | Sources fetched: 4 | Pages created: 4
+- Synthesis: [[Research- Data Analytics Skills and Plugins]]
+- Pages created: [[Research- Data Analytics Skills and Plugins]], [[Data Analytics Stack 2026]], [[supabase-mcp-analytics-2026]], [[claude-code-data-analytics-plugins-2026]], [[open-source-bi-tools-2026]]
+- Key finding: Supabase MCP is the missing analytics piece (direct Claude→DB queries with read_only safety). Metabase replaces Looker/Power BI for churn dashboard (free self-hosted, connects to Supabase Postgres). The vault already ships 8 data: skills. Approved dashboard stack confirmed correct for 2026.
+
+## [2026-06-09] autoresearch | Claude Dashboard Best Practices + Kritik ePages-Dashboards
+- Rounds: 2 | Searches: 5 | Sources fetched: 3 | Pages created: 4
+- Synthesis: [[Research- Claude Dashboard Best Practices und Kritik]]
+- Pages created: [[Research- Claude Dashboard Best Practices und Kritik]], [[claude-code-dashboard-best-practices]], [[recharts-vs-chartjs-2026]] + supabase-security-best-practices (source)
+- Key finding: 5 kritische Schwächen der bestehenden Dashboards identifiziert: Babel-Standalone-Schulden, kein Spec-First, Security-Gaps, falsche Chart-Library, kein Test-Layer. Empfehlung: Recharts + Vite + Interview-Modus + Supabase-Environments.
+
+## [2026-06-09] autoresearch | Obsidian zweites Hirn automatisch lernen
+- Rounds: 3 | Searches: 7 | Sources fetched: 5 | Pages created: 8
+- Synthesis: [[Research- Obsidian zweites Hirn automatisch lernen]]
+- Pages created: [[Research- Obsidian zweites Hirn automatisch lernen]], [[Zweites Hirn Aufbau Stack]], [[Notemd]], [[obsidian-second-brain-ai-stack-2026]], [[karpathy-llm-wiki-step-by-step]], [[notemd-plugin]], [[local-llm-hub-plugin]], [[johnny-decimal-zettelkasten-ai-librarian]]
+- Updated: [[LLM Wiki Pattern]]
+- Key finding: Ein automatisch lernendes zweites Hirn braucht 5 Schichten — Web Clipper (Capture) + Claude Code Agent (Ingest) + Notemd (Auto-Linking) + Local LLM (RAG) + AI Librarian Agents (Wartung). "Automatisch" bedeutet inkrementell, nicht autonom: Trigger durch Mensch oder Cron-Job.
+
+## [2026-06-09] save | Claude Code Slash Commands für Skills registrieren
+- Type: decision
+- Location: wiki/meta/claude-commands-skill-registration.md
+- From: Session über Plugin-Skill-Registrierung — Skills als SKILL.md vorhanden, aber nicht als Slash Commands in .claude/commands/ registriert
+- Key insight: Claude Code lädt Slash Commands nur aus .claude/commands/; das Plugin-Format (plugin.json + skills/*/SKILL.md) reicht nicht aus. Fix: 15 Wrapper-Dateien unter .claude/commands/ angelegt.
+
+## 2026-06-09 | batch ingest | ePages Dashboard Conversations (10 sources)
+
+- Sources: `.raw/Claude-Churn-Dashboard-Anforderungen und Aufbau.md`, `.raw/Claude-Conversion Rate bei tausenden Shops skalieren.md`, `.raw/Claude-Dashboard für Spreedly zu Stripe Migration.md`, `.raw/Claude-Dashboard-Optimierung und KPI-Empfehlungen.md`, `.raw/Claude-Dokumentation für Churn Dashboard.md`, `.raw/Claude-Dynamische Grafik mit Filterung und CSV-Import.md`, `.raw/Claude-Spreedly zu Stripe Dashboard Integration.md`, `.raw/Claude-Supabase-Integration im Netlify-Dashboard debuggen.md`, `.raw/Claude-Testshops aus Dashboard ausschließen.md`, `.raw/Claude-Unternehmensweites Dashboard-Setup.md`
+- Pages created: [[churn-dashboard-anforderungen]], [[Churn Dashboard]], [[churn-dashboard-dokumentation]], [[epages-conversion-rate-scaling]], [[Trial Cohort Conversion Rate]], [[epages-spreedly-dashboard-conversation]], [[Stripe]], [[epages-trial-conversion-dashboard-kpi]], [[Trial Conversion Dashboard]], [[Survivorship Bias in SaaS Metrics]], [[epages-trial-conversion-dashboard]], [[Stripe Subscription Trial Tracking]], [[epages-spreedly-stripe-dashboard-integration]], [[supabase-netlify-debug]], [[Supabase]], [[Netlify]], [[epages-testshop-filter]], [[Test Shop Exclusion]], [[epages-company-dashboard-setup]], [[Company-Wide Dashboard Hosting]]
+- Pages updated: [[ePages]], [[Spreedly]], [[ePages Spreedly Migration]], [[epages-spreedly-migration-dashboard]], [[index]], [[log]], [[hot]]
+- Key insight: The trial conversion dashboard showed 75.6% conversion rate until survivorship bias was discovered — deleted shops were excluded, hiding non-conversions; true rate is 48.3%.
+
+## 2026-06-09 | ingest | ePages Spreedly Migration Dashboard
+
+- Source: `.raw/index_12.html`
+- Summary: [[epages-spreedly-migration-dashboard]]
+- Pages created: [[epages-spreedly-migration-dashboard]], [[ePages]], [[Spreedly]], [[ePages Spreedly Migration]]
+- Pages updated: [[index]], [[log]], [[hot]]
+- Key insight: Sleeper shops (last login <2026) are excluded from the 100% migration target — this ceiling is surfaced explicitly in the dashboard UX.
+
 Entry format: `## [YYYY-MM-DD] operation | Title`
 
 Parse recent entries: `grep "^## \[" wiki/log.md | head -10`

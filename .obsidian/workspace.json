@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "477f1cf965ca606e",
+        "id": "4f77bbc69bed989d",
         "type": "tabs",
         "children": [
           {
-            "id": "a31de1b302cdc5cf",
+            "id": "d8de6df6ff4c27ee",
             "type": "leaf",
             "state": {
               "type": "graph",
@@ -74,7 +74,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "right": {
     "id": "7092b65be1e76349",
@@ -167,6 +167,16 @@
               "icon": "lucide-ghost",
               "title": "calendar"
             }
+          },
+          {
+            "id": "f8020851befdabad",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {},
+              "icon": "lucide-info",
+              "title": "File properties"
+            }
           }
         ]
       }
@@ -186,6 +196,56 @@
       "bases:Create new base": false
     }
   },
-  "active": "a31de1b302cdc5cf",
-  "lastOpenFiles": []
+  "active": "d8de6df6ff4c27ee",
+  "lastOpenFiles": [
+    "wiki/recovered/immo — German Real-Estate & Forced-Auction Agent.md",
+    "wiki/recovered/Either of these confirms a workspace_.md",
+    "wiki/recovered/For each test you generate.md",
+    "wiki/recovered/Playwright Trace CLI.md",
+    "wiki/recovered/Browser Automation with playwright-cli.md",
+    "wiki/references/llm-wiki-schema.md",
+    "wiki/questions/Research_ Data Analytics — Skills, Plugins, and Stack.md",
+    "wiki/questions/Research_ Claude Dashboard-Entwicklung – Best Practices und kritische Analyse.md",
+    "wiki/questions/Research_ AI Agents for Autonomous Tasks + German Real Estate Rent Comparison.md",
+    "wiki/meta/Dashboard Bug Fixes & Test Setup — June 2026.md",
+    "wiki/meta/Claude Code Slash Commands für Skills registrieren.md",
+    "wiki/entities/Renaissance Technologies.md",
+    "wiki/entities/Marcos López de Prado.md",
+    "wiki/entities/Notemd.md",
+    "wiki/concepts/Machine Learning for Asset Pricing.md",
+    "wiki/concepts/LLMs in Investing.md",
+    "wiki/concepts/Efficient Market Hypothesis (EMH).md",
+    "wiki/concepts/Backtest Overfitting.md",
+    "wiki/sources/n8n AI Agents.md",
+    "wiki/sources/The 10 Reasons Most Machine Learning Funds Fail (López de Prado 2018).md",
+    "wiki/sources/Second Brain in the AI Era_ PKM with Obsidian and Zettelkasten 2026.md",
+    "wiki/sources/Scraping German real-estate data — legal notes.md",
+    "wiki/sources/SPIVA U.S. Scorecard.md",
+    "wiki/sources/Recharts vs. Chart.js — 2026 Entscheidungsgrundlage.md",
+    "wiki/sources/Pseudo-Mathematics and Financial Charlatanism (Bailey et al. 2014).md",
+    "wiki/sources/Open-Source BI Tools 2026.md",
+    "wiki/hot.md.tmp.31384.6274867161a5",
+    "wiki/concepts/BWZifbPe",
+    "wiki/sources/meeting-2026-06-15-with-Chris.md.tmp.31384.519958918442",
+    "wiki/recovered",
+    "_attachments/images/notes-15-06-page1.png",
+    "Untitled.canvas",
+    "wiki/index.md.tmp.33484.aedeb1fbd900",
+    "wiki/index.md.tmp.33484.eed022569ac5",
+    "wiki/index.md.tmp.33484.9b5a218cac33",
+    "wiki/sources/bailey-lopez-de-prado-backtest-overfitting.md.tmp.33484.eb8c8d262891",
+    "wiki/hot.md.tmp.31404.76c23cf585ee",
+    "wiki/hot.md.tmp.31404.48c9e9d680f7",
+    "tools/immo-agent/is24-Hamburg-zwangsversteigerung.png",
+    "tools/immo-agent/is24-Hamburg-wohnung.png",
+    "tools/immo-agent/is24-debug.png",
+    "tools/immo-agent/node_modules/playwright-core/lib/vite/dashboard/assets/safari-na3_-uQk.svg",
+    "tools/immo-agent/node_modules/playwright-core/lib/vite/dashboard/assets/firefox-nightly-Cp5nfeDT.svg",
+    "tools/immo-agent/node_modules/playwright-core/lib/vite/dashboard/assets/firefox-beta-k3eOH_eK.svg",
+    "tools/immo-agent/node_modules/playwright-core/lib/vite/dashboard/assets/firefox-1bWoP6pv.svg",
+    "tools/immo-agent/node_modules/playwright-core/lib/vite/traceViewer/playwright-logo.svg",
+    "tools/immo-agent/node_modules/playwright-core/lib/vite/recorder/playwright-logo.svg",
+    "wiki/canvases/main.canvas",
+    "wiki/Wiki Map.canvas"
+  ]
 }

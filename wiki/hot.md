@@ -1,7 +1,7 @@
 ---
 type: meta
 title: "Hot Cache"
-updated: 2026-05-17T04:30:00
+updated: 2026-06-09T00:00:00
 tags:
   - meta
   - hot-cache
@@ -19,6 +19,52 @@ related:
 Navigation: [[index]] | [[log]] | [[overview]]
 
 ## Last Updated
+
+2026-06-16: Ingested 2-page meeting scan `.raw/Notes 15.06.pdf` → [[meeting-2026-06-15-with-Chris]] + new [[Sage]], [[PayPal]] entities and [[Base to Now Tracker]] concept. **Time-sensitive.** Theme: apply the [[Spreedly]] tracking pattern to several migrations. PayPal goes live ~2026-06-16, deadline 01.01.27. Base→Now open question = the Base↔Now package mapping. Sage = new "HTK" connector, ~350 Base shops must update. Auto Translate: Karsten → Enzio. **Also recovered the vault from an IDB-restore corruption event: 181 garbage-wrapped pages de-corrupted in place, misplaced duplicate snapshots removed, stale meta files (index/hot/log) restored from fresher copies.**
+
+2026-06-10: Autoresearch abgeschlossen — **"Data Analytics: Skills, Plugins, Stack"**. 3 Runden, 8 Suchen, 4 Seiten. Kernbefunde: (1) Supabase MCP ist das fehlende Stück — Claude kann direkt per Natural Language gegen die Supabase-Postgres-DB abfragen (`?read_only=true` für Prod); (2) Vault hat bereits 8 `data:` Skills built-in (data:analyze, data:sql-queries, data:build-dashboard, etc.); (3) Metabase löst die offene Churn-Dashboard-Frage: kostenlos self-hosted, verbindet sich direkt mit Supabase Postgres; (4) React+Vite+Recharts+Supabase+Netlify Stack bestätigt korrekt für 2026. Synthese: [[Research- Data Analytics Skills and Plugins]].
+
+2026-06-09: Autoresearch abgeschlossen — **"Claude Dashboard Best Practices + Kritik ePages"**. 5 kritische Schwächen der bisherigen Dashboards: (1) Babel-Standalone = technische Schulden, (2) kein Spec-First = Survivorship-Bias-Bug, (3) Supabase ohne Staging-Environment, (4) Chart.js statt Recharts in React, (5) kein Test-Layer. Empfohlener Stack: React + Vite + Recharts + Tailwind + Supabase + Netlify. Claude-Workflow: Interview-Modus → SPEC.md → neue Session → Implementierung → Verifikation. Synthese: [[Research- Claude Dashboard Best Practices und Kritik]].
+
+2026-06-09: Autoresearch abgeschlossen — **"Obsidian zweites Hirn automatisch lernen"**. 3 Runden, 5 Quellen, 8 neue Seiten. Kernerkenntnis: Ein lernendes zweites Hirn braucht 5 Schichten: Web Clipper (Capture) → Claude Code Agent (Ingest) → Notemd (Auto-Linking) → Local LLM Hub (RAG) → AI Librarian Agents (Wartung). "Automatisch" bedeutet inkrementell durch Trigger, nicht autonom. Neue Entität [[Notemd]] und neues Konzept [[Zweites Hirn Aufbau Stack]] angelegt. [[LLM Wiki Pattern]] mit 2026-Ökosystem erweitert. Synthese: [[Research- Obsidian zweites Hirn automatisch lernen]].
+
+2026-06-09: Dashboard feature session on `index_12.html` (ePages Spreedly Migration Dashboard). Changes shipped directly to the single-file Netlify app:
+- **Churn tab KPI card**: standalone 460px card right of chart showing total shop count broken down by filter values; uses real CSV data (not mock series names); `groupBy()` helper for actual field values
+- **Spreedly tab bug fixes**: "Total Shops" KPI bound to baseline (not current CSV count); per-partner baseline snapshot (`baselineShops`) stored in `mappings` table on first import; disappeared shops credited to correct partner in breakdown; `renderBreakdowns()` rewritten to use `partnerBaseline` as denominator
+- **Shop Search extended**: now searches `software`, `shoptype`, `provider`, `lastlogin` (year) in addition to name/domain/partner; "sleeper" and "left spreedly" work as text queries; Gone-shops always in pool so text search finds them; `provider='other'` removed as dead code; Gone chip renamed to "Left Spreedly"
+- **Left Spreedly filter**: verschwundene Shops (in baseline snapshot, nicht mehr in CSV) tauchen in Suche mit "Left Spreedly" Badge auf; `shopKey()` nutzt `domain||alias||name` als eindeutigen Key — Shops ohne alle drei Felder werden nicht erkannt (bekanntes Limit: erklärt warum 4 von 5 Gone-Shops erscheinen)
+
+2026-06-09: Batch ingested 10 ePages dashboard Claude conversations. 20 new pages. Key discoveries: survivorship bias inflated conversion rate to 75.6% (true: 48.3%); metric reframed from "get to Stripe" to "get off Spreedly"; test shop filter must run at CSV import; self-hosted + WireGuard VPN chosen for company-wide access.
+
+## Key Recent Facts
+
+- ePages is migrating shops off Spreedly before a hard shutdown deadline. Progress = `(baseline - still_on_spreedly) / baseline`. Metric is deliberately "off Spreedly", not "on Stripe".
+- Sleeper shops (lastlogin < 2026) are excluded from the 100% target; test shops (`@epages.com` email) are excluded at CSV import time.
+- Dashboard stack: Supabase (auth + Postgres + CSV blob storage) + Netlify hosting. Anon key is public in page source — RLS policies are required. Window-global credential pattern (`window.SUPABASE_URL`) caused silent auth failures when placeholders remained.
+- Trial conversion dashboard showed 75.6% conversion; true rate is 48.3% after retaining deleted shops as "Abgelaufen" status — classic survivorship bias.
+- Stripe trial shops have a 14-day window from `created_at`. Cohort analysis must anchor on `created_at` because TRIAL_ENDED shops disappear from later CSVs when deleted.
+- Deleted shops must stay visible in conversion dashboard labelled "Abgelaufen" so four cohort slices sum to 100%.
+- Dashboard migrated from localStorage to Supabase Storage (full CSV as blob) after row-level insert failed due to non-unique `alias` values.
+- Churn Analysis tab uses Chart.js with composite multi-dimensional filters; TODO hook for future internal API.
+- Churn dashboard (separate from migration dashboard) in requirements phase: Wilfried owns requirements, Karsten owns data source. Tool choice undecided; Looker/Power BI recommended for mid-size teams with a data team.
+- Company-wide dashboard: self-hosted server + WireGuard VPN, chosen for data sovereignty over Vercel/Railway.
+- Two software variants: Base (legacy) and Now (modern). Partners: 1&1, Strato, Ionos, Host Europe.
+
+## Recent Changes
+
+- Created (1 page): [[conversion-dashboard]] (source)
+- Updated: [[Trial Conversion Dashboard]] (added no-build-step stack detail + source link), [[index]] (62 pages, 14 sources), [[hot]]
+---
+- Created (20 pages): [[churn-dashboard-anforderungen]], [[Churn Dashboard]], [[churn-dashboard-dokumentation]], [[epages-conversion-rate-scaling]], [[Trial Cohort Conversion Rate]], [[epages-spreedly-dashboard-conversation]], [[Stripe]], [[epages-trial-conversion-dashboard-kpi]], [[Trial Conversion Dashboard]], [[Survivorship Bias in SaaS Metrics]], [[epages-trial-conversion-dashboard]], [[Stripe Subscription Trial Tracking]], [[epages-spreedly-stripe-dashboard-integration]], [[supabase-netlify-debug]], [[Supabase]], [[Netlify]], [[epages-testshop-filter]], [[Test Shop Exclusion]], [[epages-company-dashboard-setup]], [[Company-Wide Dashboard Hosting]]
+- Updated: [[ePages]], [[Spreedly]], [[ePages Spreedly Migration]], [[epages-spreedly-migration-dashboard]], [[index]] (61 pages, 13 sources), [[log]]
+
+## Active Threads
+
+- ePages Spreedly Migration Dashboard (`index_12.html`) ist die aktive Arbeitsdatei — direkt bei Netlify hochladen zum Deployen.
+- Offenes Limit: Shops ohne Domain/Alias/Name werden von `getGoneShops()` nicht erkannt (shopKey = ''). Betrifft 1 der 5 verschwundenen Shops.
+- Churn dashboard: Anforderungen gesammelt, Plattformwahl offen (Looker/Power BI empfohlen).
+
+---
 
 2026-05-17 (very late, post-polish): **v1.7.1 patch + polish slice shipped locally** (branch `v1.7.0-compound-vault`, still NOT pushed). All 1 BLOCKER + 6 HIGH findings closed; then verifier agent re-pass surfaced 2 MEDIUM + 3 LOW polish items, all closed in `c2d7575`. Final verifier verdict: 0/0/0/0 SHIP. Score: 100/100 on the v1.7.1 patch dimensions (plan fidelity, behavioral correctness, test health, internal consistency, constraint honor, defect introduction, kernel application). 8 commits landed in this resumption session: `ca68bb6` (Fix 1+6 BLOCKER B1 + H6 — contextual-prefix `--allow-egress` flag default-off + `bin/setup-retrieve.sh` consent prompt + `skills/wiki-retrieve/SKILL.md` Data Privacy callout, mirror of `tiling-check.py:351` `--allow-remote-ollama` precedent), `4837d4f` (Fix 2 H1 — setup-retrieve exit 5 + 3-option recovery hint on Stage 1 failure), `7e1f187` (Fix 3 H2 — `make clean-test-state` extended to v1.7 artifacts), `7120970` (Fix 4 H3 — PostToolUse hook captures LOCK_RC directly, not via pipeline; defers commit on script error OR locks held), `722ac97` (Fix 5 H5 — `detect-transport.sh` `json_escape()` helper via `python3 json.dumps`), `3ea443f` (Fix 7 H4 — new `agents/verifier.md` read-only pre-commit specialist + CLAUDE.md reference), and the cross-cutting closeout `822c80a` (version bump 1.7.0 → 1.7.1, CHANGELOG entry, audit doc updated with §10.2 SHAs + v1.7.1 closeout block, audit benchmark scripts promoted to tracked files). `make test` ran 7/7 green after every fix. End-to-end verifications: `python3 scripts/contextual-prefix.py --peek` returns `tier=synthetic` even with `ANTHROPIC_API_KEY` set (default-deny works); `--allow-egress` correctly flips it; `echo "" | bash bin/setup-retrieve.sh` aborts at the consent prompt; `bash scripts/wiki-lock.sh acquire ...` then hook trigger correctly defers auto-commit. **Next step**: ask user whether to push + tag `v1.7.1`. Do NOT push without explicit go.
 
