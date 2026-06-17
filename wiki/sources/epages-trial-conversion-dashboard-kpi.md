@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "ePages Trial Conversion Dashboard — KPI Optimization"
 date: 2026-05-04
 source_file: ".raw/Claude-Dashboard-Optimierung und KPI-Empfehlungen.md"

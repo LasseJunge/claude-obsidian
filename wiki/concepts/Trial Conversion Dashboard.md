@@ -1,4 +1,7 @@
 ---
+aliases:
+  - "conversion-dashboard"
+
 type: concept
 title: "Trial Conversion Dashboard"
 created: 2026-06-09

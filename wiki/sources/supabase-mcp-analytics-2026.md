@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Supabase MCP Server for Claude Code Analytics"
 source_type: web research
 date_published: 2026-06

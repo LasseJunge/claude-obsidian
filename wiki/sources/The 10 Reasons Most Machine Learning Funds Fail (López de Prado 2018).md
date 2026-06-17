@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "lopez-de-prado-10-reasons-ml-funds-fail"
+---
+
 ﻿---
 type: source
 source_type: peer-reviewed paper

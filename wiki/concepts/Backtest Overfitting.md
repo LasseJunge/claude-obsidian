@@ -1,4 +1,7 @@
 ---
+aliases:
+  - "bailey-lopez-de-prado-backtest-overfitting"
+
 type: concept
 title: "Backtest Overfitting"
 created: 2026-06-16

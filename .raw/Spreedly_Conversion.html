@@ -3036,7 +3036,7 @@ function ppRenderPartnerBreakdown(shops){
     return`<div class="bd-row">
       <div class="bd-name" title="${n}">${n}</div>
       <div class="bd-bar-wrap"><div class="bd-bar" style="width:${p}%;background:var(--ok)"></div></div>
-      <div class="bd-nums"><span class="pct" style="color:var(--ok)">${p}%</span> <span style="color:var(--text3)">newest / ${fmt(d.total)}</span></div>
+      <div class="bd-nums"><span class="pct" style="color:var(--ok)">${p}%</span> <span style="color:var(--text3)">${fmt(d.newest)} / ${fmt(d.total)}</span></div>
     </div>`;
   }).join('');
   const ss=Object.entries(pm).filter(([,d])=>d.shutdown>0).sort((a,b)=>b[1].shutdown-a[1].shutdown);

@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "open-source-bi-tools-2026"
+---
+
 ﻿---
 type: source
 title: "Open Source BI Tools for Small Teams 2026"

@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "notemd-plugin"
+---
+
 ﻿---
 type: source
 title: "Notemd — Obsidian Plugin für automatische Wiki-Links & Konzeptseiten"

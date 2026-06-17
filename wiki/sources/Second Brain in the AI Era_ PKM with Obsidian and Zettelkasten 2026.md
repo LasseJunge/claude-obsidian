@@ -1,4 +1,7 @@
 ---
+aliases:
+  - "obsidian-second-brain-ai-stack-2026"
+
 type: source
 title: "Second Brain in the AI Era: PKM with Obsidian and Zettelkasten 2026"
 created: 2026-06-09

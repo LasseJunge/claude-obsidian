@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "buffett-hedge-fund-bet"
+---
+
 ﻿---
 type: source
 source_type: documented public wager

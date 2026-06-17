@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Conversion Rate bei tausenden Shops skalieren"
 date: 2026-06-01
 source_file: ".raw/Claude-Conversion Rate bei tausenden Shops skalieren.md"

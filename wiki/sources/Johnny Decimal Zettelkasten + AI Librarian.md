@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "johnny-decimal-zettelkasten-ai-librarian"
+---
+
 ﻿---
 type: source
 title: "Johnny Decimal Zettelkasten — Compounding Knowledge mit AI Librarian"

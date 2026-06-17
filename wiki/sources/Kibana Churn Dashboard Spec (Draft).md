@@ -1,4 +1,15 @@
- Kibana Dashboard: Churn & Billable Shops
+---
+type: source
+title: "Kibana Churn Dashboard Spec (Draft)"
+status: seed
+created: 2026-06-15
+updated: 2026-06-17
+tags: [source, churn, dashboard, kibana, epages]
+aliases:
+  - Kibana Dashboard Churn & Billable Shops
+---
+
+# Kibana Dashboard: Churn & Billable Shops
 
 **Status:** Draft — fill in the `‹FILL›` placeholders, then build in Kibana UI.
 **Platform:** Kibana on existing Elasticsearch index (no data view yet → create first).
@@ -6,29 +17,31 @@
 **Owner:** ljunge@epages.com
 **Created:** 2026-06-15
 
+Related: [[Churn Dashboard]], [[churn-dashboard-anforderungen]], [[churn-dashboard-dokumentation]]
+
 ---
 
 ## 1. Data source
 
-| Item                  | Value                                                                 |
-| --------------------- | --------------------------------------------------------------------- |
-| Index / index pattern | `‹FILL: e.g. shops-*›`                                                |
-| Kibana data view name | `shops` (to be created)                                               |
-| Time field            | `‹FILL: e.g. @timestamp / createdAt›`                                 |
-| One document =        | `‹FILL: one shop? one daily snapshot per shop? one lifecycle event?›` |
+| Item | Value |
+|------|-------|
+| Index / index pattern | `‹FILL: e.g. shops-*›` |
+| Kibana data view name | `shops` (to be created) |
+| Time field | `‹FILL: e.g. @timestamp / createdAt›` |
+| One document = | `‹FILL: one shop? one daily snapshot per shop? one lifecycle event?›` |
 
 > ⚠️ The doc grain drives everything. **Snapshot-per-shop-per-day** vs **one-row-per-shop** changes how churn rate and counts are aggregated. Confirm before building.
 
 ## 2. Field mapping
 
-| Concept                     | Field                                          | Notes                            |
-| --------------------------- | ---------------------------------------------- | -------------------------------- |
-| Plan / tier                 | `‹FILL: e.g. plan / tier›`                     | Used for billable classification |
-| Paid (billable) tier values | `‹FILL: e.g. ["business","pro","enterprise"]›` | Billable = plan ∈ this set       |
-| Free/trial tier values      | `‹FILL: e.g. ["free","trial"]›`                | Excluded from billable           |
-| Shop status / state         | `‹FILL: e.g. status›`                          | active / canceled / closed       |
-| Churned-state value(s)      | `‹FILL: e.g. ["canceled","closed"]›`           | Marks a shop as churned          |
-| Shop ID                     | `‹FILL: e.g. shopId›`                          | For unique counts (cardinality)  |
+| Concept | Field | Notes |
+|---------|-------|-------|
+| Plan / tier | `‹FILL: e.g. plan / tier›` | Used for billable classification |
+| Paid (billable) tier values | `‹FILL: e.g. ["business","pro","enterprise"]›` | Billable = plan ∈ this set |
+| Free/trial tier values | `‹FILL: e.g. ["free","trial"]›` | Excluded from billable |
+| Shop status / state | `‹FILL: e.g. status›` | active / canceled / closed |
+| Churned-state value(s) | `‹FILL: e.g. ["canceled","closed"]›` | Marks a shop as churned |
+| Shop ID | `‹FILL: e.g. shopId›` | For unique counts (cardinality) |
 
 ## 3. KPIs
 

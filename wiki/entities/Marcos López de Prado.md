@@ -1,4 +1,7 @@
 ---
+aliases:
+  - "Marcos Lopez de Prado"
+
 type: entity
 entity_type: person
 title: "Marcos López de Prado"

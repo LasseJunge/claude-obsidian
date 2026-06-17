@@ -1,5 +1,6 @@
 ---
 type: concept
+updated: 2026-06-16
 title: "Survivorship Bias in SaaS Metrics"
 created: 2026-06-09
 tags:

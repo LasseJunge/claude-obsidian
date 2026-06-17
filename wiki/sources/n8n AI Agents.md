@@ -1,3 +1,11 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "n8n-ai-agents"
+  - "n8n"
+---
+
 ﻿---
 type: source
 source_type: documentation

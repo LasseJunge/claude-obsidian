@@ -1,5 +1,10 @@
 ---
+aliases:
+  - "methodology-modes-guide"
+
 type: reference
+created: 2026-05-17
+updated: 2026-05-17
 title: "Methodology Modes — Quick Decision Tree"
 tags:
   - reference

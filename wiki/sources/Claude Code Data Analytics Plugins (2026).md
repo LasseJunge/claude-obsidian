@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "claude-code-data-analytics-plugins-2026"
+---
+
 ﻿---
 type: source
 title: "Claude Code Data Analytics Plugins 2026"

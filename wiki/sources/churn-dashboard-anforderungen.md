@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Churn-Dashboard-Anforderungen und Aufbau"
 date: 2026-05-11
 source_file: ".raw/Claude-Churn-Dashboard-Anforderungen und Aufbau.md"

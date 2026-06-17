@@ -1,5 +1,10 @@
 ---
+aliases:
+  - "mietspiegel-data-sources"
+
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 source_type: aggregate
 title: "German rent-index data sources (Destatis / empirica / mietenwatch)"
 author: Destatis, empirica-systeme, mietenwatch

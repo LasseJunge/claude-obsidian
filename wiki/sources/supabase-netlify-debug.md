@@ -1,5 +1,7 @@
-﻿---
+---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Supabase Integration im Netlify-Dashboard debuggen"
 aliases:
   - "Netlify"

@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "gu-kelly-xiu-empirical-asset-pricing-ml"
+---
+
 ﻿---
 type: source
 source_type: peer-reviewed paper

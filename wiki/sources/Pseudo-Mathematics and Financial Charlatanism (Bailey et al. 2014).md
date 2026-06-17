@@ -1,5 +1,7 @@
-﻿---
+---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 source_type: peer-reviewed paper
 title: "Pseudo-Mathematics and Financial Charlatanism / The Deflated Sharpe Ratio"
 aliases:

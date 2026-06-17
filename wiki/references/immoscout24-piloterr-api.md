@@ -1,5 +1,6 @@
 ---
 type: reference
+address: c-000010
 title: "ImmoScout24 via Piloterr API"
 created: 2026-06-15
 updated: 2026-06-15

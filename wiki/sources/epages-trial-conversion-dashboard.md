@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Dynamic Chart with Filtering and CSV Import — Trial Conversion Dashboard"
 date: 2026-04-28
 source_file: ".raw/Claude-Dynamische Grafik mit Filterung und CSV-Import.md"

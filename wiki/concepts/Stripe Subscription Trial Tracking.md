@@ -1,5 +1,6 @@
 ---
 type: concept
+updated: 2026-06-16
 title: "Stripe Subscription Trial Tracking"
 created: 2026-06-09
 tags:

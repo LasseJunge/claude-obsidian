@@ -1,3 +1,11 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "Research- Claude Dashboard Best Practices und Kritik"
+  - "claude-code-dashboard-best-practices"
+---
+
 ﻿---
 type: synthesis
 title: "Research: Claude Dashboard-Entwicklung – Best Practices und kritische Analyse"

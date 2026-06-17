@@ -1,5 +1,7 @@
-﻿---
+---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 source_type: aggregate
 title: "Legality of scraping German real-estate portals (ToS + GDPR)"
 aliases:

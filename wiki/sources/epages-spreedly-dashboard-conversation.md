@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Dashboard für Spreedly zu Stripe Migration — Design Conversation"
 date: 2026-05-18
 source_file: ".raw/Claude-Dashboard für Spreedly zu Stripe Migration.md"

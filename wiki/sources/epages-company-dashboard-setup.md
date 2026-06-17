@@ -1,5 +1,7 @@
 ---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 title: "Unternehmensweites Dashboard-Setup"
 date: 2026-06-02
 source_file: ".raw/Claude-Unternehmensweites Dashboard-Setup.md"

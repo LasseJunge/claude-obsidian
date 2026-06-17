@@ -1,5 +1,6 @@
 ---
 type: concept
+updated: 2026-06-16
 title: "Company-Wide Dashboard Hosting"
 created: 2026-06-09
 tags:

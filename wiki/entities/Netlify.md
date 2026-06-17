@@ -1,5 +1,6 @@
 ---
 type: entity
+updated: 2026-06-16
 title: "Netlify"
 created: 2026-06-09
 tags:

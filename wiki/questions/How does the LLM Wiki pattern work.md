@@ -1,3 +1,10 @@
+---created: 2026-04-07
+updated: 2026-06-16
+
+aliases:
+  - "How does the LLM Wiki pattern work?"
+---
+
 ﻿---
 type: question
 title: "How does the LLM Wiki pattern work?"

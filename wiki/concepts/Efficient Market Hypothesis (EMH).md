@@ -1,3 +1,10 @@
+---created: 2026-06-16
+updated: 2026-06-16
+
+aliases:
+  - "Efficient Market Hypothesis"
+---
+
 ﻿---
 type: concept
 title: "Efficient Market Hypothesis"

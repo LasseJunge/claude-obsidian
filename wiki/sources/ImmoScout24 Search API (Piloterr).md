@@ -1,5 +1,7 @@
-﻿---
+---
 type: source
+created: 2026-06-16
+updated: 2026-06-16
 source_type: documentation
 title: "ImmoScout24 Search Scraper API (Piloterr)"
 aliases:
