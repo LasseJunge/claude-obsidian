@@ -114,6 +114,9 @@ wiki/immo/*
 # User-specific attachments
 _attachments/
 
+# Real source exports dropped into .raw/ (customer/shop data — never push to GitHub)
+.raw/*.csv
+
 # DragonScale runtime lockfiles and local caches (flock + embedding cache; state files like counter.txt and thresholds.json ARE tracked)
 .vault-meta/.address.lock
 .vault-meta/.tiling.lock

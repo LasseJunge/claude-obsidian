@@ -1,7 +1,7 @@
 ---
 type: meta
 title: "Hot Cache"
-updated: 2026-06-16T18:00:00
+updated: 2026-06-17T12:00:00
 tags:
   - meta
   - hot-cache
@@ -19,6 +19,9 @@ related:
 Navigation: [[index]] | [[log]] | [[overview]]
 
 ## Last Updated
+
+2026-06-17: **PayPal Migration tab — tracking + data-model fixes** in `.raw/Spreedly_Conversion.html`. (1) The CSV is **one row per (shop, gateway)** — 15,251 rows / 13,537 unique aliases; the alias-dedup was dropping the 1,714 multi-gateway rows → only 13k showed. Fixed via a `dedupe` flag (PayPal callers pass `false`; Spreedly/AT keep dedup). (2) Version Distribution showed only 4/6 versions because a `"PayPal"` gateway swallowed `PayPalPro`+`PayPalIntegralEvolution` via substring `includes` (1082+17+7=1106). Fixed: `ppGetGatewayInfo` now longest-match; distribution groups by actual payment value. (3) Progress bar now tracks **shutdown migration vs a persisted baseline** (`paypal_shutdown_baseline` in Supabase, captured once, survives weekly uploads). (4) New **"Changes Since Last Upload"** panel — diffs current vs `paypal_prev.csv` (snapshotted each import) by stable UUID alias → onto-newest / off-shutdown / new / gone KPIs + a version-to-version movement matrix. (5) Stale-baseline bug after clear+reupload (Supabase returned pre-clear export as "previous") fixed by guarding the snapshot on `ppShops.length`. (6) PayPal tab de-admin-gated (read-only for any logged-in user). (7) Search now covers shoptype/software/database + Shoptype column; "Base" assumption removed. Verified by running the real functions in Node against the CSV. Playbook: [[2026-06-17-paypal-migration-tracking]].
+
 
 2026-06-16: **Autoresearch — "Can AI predict which stocks will go up?"** Reframed the user's "tool that tracks what stock WILL go up" prompt into evidence-vs-hype + an honest builder blueprint (scope: real money / own capital). 16 pages filed. Verdict: AI does NOT reliably predict single-stock direction net of costs. Base rates brutal (SPIVA: no fund category beats over 15y; 97% of persistent day traders lose). ML edge real but tiny (~0.4% monthly R², Gu/Kelly/Xiu) and trapped in illiquid microcaps (Sharpe 1.35 VW vs 2.45 EW). Biggest DIY trap = [[Backtest Overfitting]]. LLMs good at reading text, not beating market (look-ahead bias). Defensible uses: factor harvesting, research speed, risk mgmt. If building anyway → [[Honest Stock-Signal Tool Blueprint]] (point-in-time data, purged CV, net-of-cost + ~26% German tax eval, paper-trade first). German real-money note: IBKR has a Python API + self-declare via Anlage KAP. Synthesis: [[Research- Can AI Predict Which Stocks Will Go Up]]. **Built + verified two tools at `tools/honest-signal-lab/`** (ran on real Python installed this session): (1) `overfitting_demo.py` — pure-stdlib Monte Carlo; across 4 base seeds in-sample Sharpe ~0.7 collapses to OOS ~0, deflated ~46% = chance, overfit tool loses to buy-and-hold ~70% of the time. (2) `signal_lab.py` — REAL data via yfinance (Stooq is bot-blocked: JS proof-of-work + "Access denied" even after solving it). Momentum 12-1 + walk-forward HistGBM ML vs buy-and-hold SPY, out-of-sample, net of costs + 26.375% German tax. Result (2014-2024, survivorship-biased universe that should HELP pickers): Momentum +12.1%/SR 0.87 and ML +10.7%/SR 0.68 BOTH LOST to SPY +13.2%/SR 0.92. Honest verdict reinforced. Python at `%LOCALAPPDATA%\Programs\Python\Python312\python.exe` (bare `python` shadowed by Store alias); deps yfinance+scikit-learn installed; `data/` gitignored.
 

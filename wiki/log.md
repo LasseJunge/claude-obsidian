@@ -19,6 +19,11 @@ Navigation: [[index]] | [[hot]] | [[overview]]
 
 Append-only. New entries go at the TOP. Never edit past entries.
 
+## [2026-06-17] save | PayPal Dashboard — Migration Tracking & Data-Model Fixes
+- Type: session
+- Location: wiki/meta/2026-06-17-paypal-migration-tracking.md
+- From: second session on the PayPal Migration tab — dedup/one-row-per-gateway fix, longest-match gateway classification, shutdown-baseline progress bar, week-over-week version-migration diff panel, stale-baseline bug fix, tab de-admin-gated
+
 ## [2026-06-16] autoresearch | Can AI Predict Which Stocks Will Go Up?
 - Rounds: 3 | Searches: ~10 | Pages created: 16
 - Reframed the user's prompt from "tool that tracks what stock WILL go up" → evidence-vs-hype + honest builder blueprint (real money / own capital).

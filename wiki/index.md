@@ -37,6 +37,8 @@ Navigation: [[overview]] | [[log]] | [[hot]] | [[dashboard]] | [[Wiki Map]] | [[
 
 ## Sessions
 
+- [[2026-06-17-paypal-migration-tracking]] — PayPal tab: one-row-per-gateway dedup fix, longest-match gateway classification (all 6 versions), shutdown-baseline progress bar, week-over-week version-migration diff panel, stale-baseline fix, tab de-admin-gated (status: current)
+- [[2026-06-16-paypal-dashboard-build]] — initial PayPal Migration tab build: version-upgrade KPIs, admin-configurable gateways, independent CSV layer, TDZ render bug fix (status: current)
 - [[2026-06-16-vault-exploration-and-ponytail-install]] — full vault inventory, proactive skill suggestion map, ponytail installed from GitHub (status: evergreen)
 - [[2026-06-15-immo-agent-build-session]] — built `tools/immo-agent/`: autonomous German real-estate + forced-auction monitor (zvg-portal, bank auctions, Kleinanzeigen, ImmoScout24 via real-Chrome CDP attach); Node not Python; daily schedule + dashboard + private backup (status: developing)
 - [[2026-06-15-churn-growth-styling-supabase-session]] — negative churn (net growth) gets distinct blue/▲ styling across KPIs, tables, and the line chart; Supabase RLS hardening (writes/reads/storage all authenticated) verified complete (status: developing)

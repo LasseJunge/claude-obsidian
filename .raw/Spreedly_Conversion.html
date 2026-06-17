@@ -340,7 +340,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
   <a class="nav-tab" onclick="showPage('churn',this)">
     <i class="ti ti-chart-line-down"></i> Churn Analysis
   </a>
-  <a class="nav-tab admin-tab" style="display:none" onclick="showPage('paypal',this)">
+  <a class="nav-tab" onclick="showPage('paypal',this)">
     <i class="ti ti-brand-paypal"></i> PayPal Migration
   </a>
   <a class="nav-tab" onclick="showPage('autotranslate',this)">
@@ -561,7 +561,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 
   <div id="pp-gateway-notice" style="display:none;align-items:center;gap:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:10px 16px;margin-bottom:1.5rem;">
     <i class="ti ti-info-circle" style="font-size:15px;color:#d97706;flex-shrink:0;"></i>
-    <span style="font-size:13px;color:#92400e;font-weight:500;">No PayPal gateways configured — showing all Base shops with "paypal" in their payment field. Log in as Admin and use <strong>PayPal Gateways</strong> to enable version tracking.</span>
+    <span style="font-size:13px;color:#92400e;font-weight:500;">No PayPal gateways configured — showing all shops with "paypal" in their payment field. Log in as Admin and use <strong>PayPal Gateways</strong> to enable version tracking.</span>
   </div>
 
   <div class="kpi-grid" style="margin-bottom:1.75rem;">
@@ -586,9 +586,9 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
       <div class="kpi-sub">6+ months inactive</div>
     </div>
     <div class="kpi" style="border-color:var(--pp-bd);background:var(--pp-bg)">
-      <div class="kpi-lbl" style="color:var(--pp)"><i class="ti ti-brand-paypal" style="font-size:12px"></i> Total PayPal (Base)</div>
+      <div class="kpi-lbl" style="color:var(--pp)"><i class="ti ti-brand-paypal" style="font-size:12px"></i> Total PayPal</div>
       <div class="kpi-val" id="pp-k-tot" style="color:var(--pp)">–</div>
-      <div class="kpi-sub">Base shops on any PayPal</div>
+      <div class="kpi-sub">shops on any PayPal version</div>
     </div>
     <div class="kpi days">
       <div class="kpi-lbl"><i class="ti ti-calendar-due" style="font-size:12px"></i> Days Remaining</div>
@@ -605,8 +605,8 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
   <div class="prog-card" style="margin-bottom:1.75rem;">
     <div class="prog-head">
       <div>
-        <h2>Migration to Newest PayPal</h2>
-        <p>Active Base shops that have moved to the newest PayPal version</p>
+        <h2>Shutdown Version Migration</h2>
+        <p>Shops moved off PayPal versions being shut down, vs. the baseline shutdown count</p>
       </div>
       <div class="prog-dates" id="pp-prog-dates"></div>
     </div>
@@ -614,10 +614,11 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
       <div class="prog-fill" id="pp-prog-fill" style="width:0%"></div>
     </div>
     <div class="prog-lbls">
-      <span><strong id="pp-p-new">0</strong> on newest</span>
+      <span><strong id="pp-p-new">0</strong> migrated off shutdown</span>
       <span class="pct" id="pp-p-pct">0%</span>
-      <span><strong id="pp-p-tot">0</strong> active shops</span>
+      <span><strong id="pp-p-tot">0</strong> baseline shutdown shops</span>
     </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center;"><strong id="pp-p-curshut">0</strong> still on shutdown versions · baseline set <span id="pp-p-basedate">–</span></div>
     <div class="time-row">
       <div class="time-lbls">
         <span>Time progress until deadline</span>
@@ -625,6 +626,15 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
       </div>
       <div class="time-track"><div class="time-fill ok" id="pp-time-fill" style="width:0%"></div></div>
     </div>
+  </div>
+
+  <div class="sec-lbl">Changes Since Last Upload</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-arrows-exchange" style="font-size:14px;color:var(--text2)"></i> Version Migrations</div>
+      <span class="bd-cnt" id="pp-chg-cnt"></span>
+    </div>
+    <div id="pp-chg-body" style="padding:.9rem 1.2rem;"></div>
   </div>
 
   <div class="sec-lbl">Version Distribution</div>
@@ -668,7 +678,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
       </div>
       <div class="sw-wrap">
         <i class="ti ti-search"></i>
-        <input type="text" class="s-input" id="pp-si" placeholder="Search by name, domain, partner, gateway …" oninput="ppOnSearch()">
+        <input type="text" class="s-input" id="pp-si" placeholder="Search name, domain, partner, gateway, shoptype, software, DB, year …" oninput="ppOnSearch()">
       </div>
     </div>
     <div class="search-info" id="pp-search-info"></div>
@@ -1087,11 +1097,15 @@ async function dbLoadAll(){
     if(ppc) ppConfig = ppc.data||ppConfig;
     const ppbl = maps.find(m=>m.id==='paypal_baseline');
     if(ppbl) ppBaseline = ppbl.data;
+    const ppsb = maps.find(m=>m.id==='paypal_shutdown_baseline');
+    if(ppsb) ppShutBaseline = ppsb.data;
     const tsd = maps.find(m=>m.id==='timestamps');
     if(tsd) tsData = {...tsData,...(tsd.data||{})};
   }
   const ppCsvText = await dbLoadPayPalCSV();
-  if(ppCsvText){ const parsed=parseCSVAuto(ppCsvText); if(parsed.length) ppShops=parsed; }
+  if(ppCsvText){ const parsed=parseCSVAuto(ppCsvText, false); if(parsed.length) ppShops=parsed; }
+  const ppPrevText = await dbLoadPayPalPrevCSV();
+  if(ppPrevText){ const prev=parseCSVAuto(ppPrevText, false); if(prev.length) ppPrevShops=prev; }
 
   // shops – load from Storage
   const csvText = await dbLoadCSV();
@@ -1150,7 +1164,7 @@ async function dbClearShops(){
   await sb.from('baseline').delete().eq('id',1);
 }
 
-function parseCSV(text, delim=';'){
+function parseCSV(text, delim=';', dedupe=true){
   const lines = text.trim().split('\n');
   if(lines.length < 2) return [];
   const headers = splitCSVLine(lines[0], delim).map(h=>h.toLowerCase());
@@ -1174,6 +1188,7 @@ function parseCSV(text, delim=';'){
     };
     if(shop.alias) parsed.push(shop);
   }
+  if(!dedupe) return parsed;
   // Deduplicate by alias – keep first occurrence
   const seen = new Set();
   return parsed.filter(s=>{ if(seen.has(s.alias)) return false; seen.add(s.alias); return true; });
@@ -1199,7 +1214,7 @@ function splitCSVLine(line, delim){
 }
 
 // ── Detect delimiter: tab, semicolon or comma ─────────────────
-function parseCSVAuto(text){
+function parseCSVAuto(text, dedupe=true){
   const firstLine = text.split('\n')[0];
   const tabs       = (firstLine.match(/\t/g)||[]).length;
   const semicolons = (firstLine.match(/;/g)||[]).length;
@@ -1207,7 +1222,7 @@ function parseCSVAuto(text){
   let delim = ';';
   if(tabs > semicolons && tabs > commas) delim = '\t';
   else if(commas > semicolons) delim = ',';
-  return parseCSV(text, delim);
+  return parseCSV(text, delim, dedupe);
 }
 
 const fmt=n=>n.toLocaleString('en-GB');
@@ -2680,6 +2695,11 @@ function resetChurnFilter(){
 let ppConfig = { gateways: [], startDate: '', deadline: '2027-01-01' };
 let ppShops = [];
 let ppBaseline = null;
+let ppShutBaseline = null; // {count, date} – shutdown-shop count at first import, for weekly migration tracking
+let ppPrevShops = [];      // previous week's snapshot, for week-over-week version-migration diff
+
+// Count shops currently on a shutdown version
+function ppShutCount(shops){ return shops.filter(s=>ppGetGatewayType(s)==='shutdown').length; }
 
 async function dbSavePayPalCSV(rawText){
   if(!currentUser||!isAdmin) return;
@@ -2693,15 +2713,32 @@ async function dbLoadPayPalCSV(){
   if(error) return null;
   return await data.text();
 }
+async function dbSavePayPalPrevCSV(rawText){
+  if(!currentUser||!isAdmin) return;
+  const blob=new Blob([rawText],{type:'text/csv'});
+  await sb.storage.from('csv-imports').upload('paypal_prev.csv',blob,{upsert:true});
+}
+async function dbLoadPayPalPrevCSV(){
+  if(!currentUser) return null;
+  const {data,error}=await sb.storage.from('csv-imports').download('paypal_prev.csv');
+  if(error) return null;
+  return await data.text();
+}
 async function dbClearPayPalData(){
   if(!currentUser||!isAdmin) return;
-  await sb.storage.from('csv-imports').remove(['paypal.csv']);
+  await sb.storage.from('csv-imports').remove(['paypal.csv','paypal_prev.csv']);
   await sb.from('mappings').delete().eq('id','paypal_baseline');
+  await sb.from('mappings').delete().eq('id','paypal_shutdown_baseline');
 }
 async function dbSavePayPalBaseline(){
   if(!currentUser||!isAdmin) return;
   if(ppBaseline) await sb.from('mappings').upsert({id:'paypal_baseline',data:ppBaseline});
   else await sb.from('mappings').delete().eq('id','paypal_baseline');
+}
+async function dbSavePayPalShutBaseline(){
+  if(!currentUser||!isAdmin) return;
+  if(ppShutBaseline) await sb.from('mappings').upsert({id:'paypal_shutdown_baseline',data:ppShutBaseline});
+  else await sb.from('mappings').delete().eq('id','paypal_shutdown_baseline');
 }
 
 function triggerPayPalCSVUpload(){
@@ -2713,12 +2750,24 @@ function triggerPayPalCSVUpload(){
     const reader=new FileReader();
     reader.onload=async ev=>{
       const rawText=ev.target.result;
-      const parsed=parseCSVAuto(rawText);
+      const parsed=parseCSVAuto(rawText, false);
       if(!parsed.length){alert('No valid data found in file. Please check the CSV format.');return;}
+      // Preserve the current snapshot as "previous" before overwriting, so we can diff week-over-week.
+      // Guard on in-memory data: after a Clear, ppShops is empty, so a stale/cached storage read can't
+      // resurrect a pre-clear export as the baseline.
+      const oldCsv=ppShops.length?await dbLoadPayPalCSV():null;
+      if(oldCsv){ await dbSavePayPalPrevCSV(oldCsv); const prev=parseCSVAuto(oldCsv,false); ppPrevShops.splice(0,ppPrevShops.length,...prev); }
+      else { ppPrevShops.splice(0,ppPrevShops.length); await dbSavePayPalPrevCSV(''); }
       ppShops.splice(0,ppShops.length,...parsed);
       if(!ppBaseline){
         ppBaseline={count:parsed.length,date:new Date().toISOString()};
         await dbSavePayPalBaseline();
+      }
+      // Capture the shutdown-shop count once, on the first import – this is the migration baseline
+      // weekly uploads measure against. Needs ppConfig (gateways) already loaded to classify.
+      if(!ppShutBaseline){
+        ppShutBaseline={count:ppShutCount(parsed),date:new Date().toISOString()};
+        await dbSavePayPalShutBaseline();
       }
       await dbSavePayPalCSV(rawText);
       await dbStampUpload('pp'); await dbStampModified();
@@ -2734,7 +2783,9 @@ function triggerPayPalCSVUpload(){
 function openConfirmClearPP(){ document.getElementById('confirm-pp-modal').classList.add('open'); }
 async function clearPayPalData(){
   ppShops.splice(0,ppShops.length);
+  ppPrevShops.splice(0,ppPrevShops.length);
   ppBaseline=null;
+  ppShutBaseline=null;
   await dbClearPayPalData();
   await dbStampModified();
   closeModal('confirm-pp-modal');
@@ -2752,8 +2803,12 @@ async function dbSavePayPalConfig(){
 
 function ppGetGatewayInfo(s){
   const p=(s.payment||'').toLowerCase();
-  for(const gw of ppConfig.gateways){ if(gw.name && p.includes(gw.name.toLowerCase())) return gw; }
-  return null;
+  // Most specific (longest) matching substring wins, so "PayPalPro" isn't swallowed by a "PayPal" gateway.
+  let best=null;
+  for(const gw of ppConfig.gateways){
+    if(gw.name && p.includes(gw.name.toLowerCase()) && (!best || gw.name.length>best.name.length)) best=gw;
+  }
+  return best;
 }
 function ppIsPayPalShop(s){
   if(ppConfig.gateways.length) return ppGetGatewayInfo(s)!==null;
@@ -2807,11 +2862,21 @@ function ppRefresh(){
     document.getElementById('pp-sleeper-note-text').innerHTML='<strong>'+fmt(slShops.length)+' sleeper shops</strong> (last login before '+SLEEPER_YEAR+') are unlikely to migrate – 100% may not be reached.';
   } else { slNote.style.display='none'; }
 
-  const pct=active.length>0?Math.round((newActive.length/active.length)*100):0;
+  const curShut=shutShops.length;
+  // Seed the baseline from already-loaded data (e.g. data imported before baseline tracking existed).
+  if(!ppShutBaseline && isAdmin && ppShops.length){
+    ppShutBaseline={count:curShut,date:new Date().toISOString()};
+    dbSavePayPalShutBaseline();
+  }
+  const base=ppShutBaseline?ppShutBaseline.count:curShut; // fall back to current count until a baseline is captured
+  const migrated=Math.max(0,base-curShut);
+  const pct=base>0?Math.round((migrated/base)*100):0;
   document.getElementById('pp-prog-fill').style.width=pct+'%';
-  document.getElementById('pp-p-new').textContent=fmt(newActive.length);
-  document.getElementById('pp-p-tot').textContent=fmt(active.length);
+  document.getElementById('pp-p-new').textContent=fmt(migrated);
+  document.getElementById('pp-p-tot').textContent=fmt(base);
   document.getElementById('pp-p-pct').textContent=pct+'%';
+  document.getElementById('pp-p-curshut').textContent=fmt(curShut);
+  document.getElementById('pp-p-basedate').textContent=ppShutBaseline?fmtDo(new Date(ppShutBaseline.date)):'on first import';
 
   if(start){
     const totalD=daysB(start,deadline), elapsed=daysB(start,TODAY);
@@ -2824,31 +2889,80 @@ function ppRefresh(){
     document.getElementById('pp-prog-dates').innerHTML='Deadline: <strong>'+fmtDo(deadline)+'</strong>';
   }
 
-  ppRenderVersionBreakdown(ppShops,hasGw);
+  ppRenderChanges(ppShops);
+  ppRenderVersionBreakdown(ppShops);
   ppRenderPartnerBreakdown(ppShops);
   ppDoSearch();
 }
 
-function ppRenderVersionBreakdown(ppShops,hasGw){
+// Diff the current snapshot against last week's upload to surface per-shop version migrations.
+function ppRenderChanges(curShops){
+  const body=document.getElementById('pp-chg-body');
+  const cnt=document.getElementById('pp-chg-cnt');
+  if(!ppPrevShops.length){
+    cnt.textContent='';
+    body.innerHTML='<div style="color:var(--text3);font-size:13px;">No previous upload to compare yet. After your next CSV import, week-over-week migrations show up here.</div>';
+    return;
+  }
+  // alias → Set of payment versions it holds
+  const setOf=arr=>{const m=new Map();arr.forEach(s=>{if(!s.alias)return;if(!m.has(s.alias))m.set(s.alias,new Set());if(s.payment)m.get(s.alias).add(s.payment);});return m;};
+  const prev=setOf(ppPrevShops), cur=setOf(curShops);
+  const typeOf=v=>ppGetGatewayType({payment:v})||'unknown';
+  const transitions={}; let ontoNewest=0, offShutdown=0, newShops=0, goneShops=0, changed=0;
+  cur.forEach((cv,a)=>{
+    const pv=prev.get(a);
+    if(!pv){ newShops++; return; }
+    const removed=[...pv].filter(v=>!cv.has(v)), added=[...cv].filter(v=>!pv.has(v));
+    if(!removed.length&&!added.length) return;
+    changed++;
+    if([...pv].some(v=>typeOf(v)==='shutdown') && ![...cv].some(v=>typeOf(v)==='shutdown')) offShutdown++;
+    if(![...pv].some(v=>typeOf(v)==='newest')  &&  [...cv].some(v=>typeOf(v)==='newest'))  ontoNewest++;
+    // version-level movements: pair each dropped version with each gained one
+    removed.forEach(r=>added.forEach(ad=>{const k=r+''+ad;transitions[k]=(transitions[k]||0)+1;}));
+  });
+  prev.forEach((pv,a)=>{ if(!cur.has(a)) goneShops++; });
+  cnt.textContent=fmt(changed)+' shops changed';
+  const TC={shutdown:'var(--ep-red)',newest:'var(--ok)',legacy:'var(--warn)',unknown:'var(--text3)'};
+  const stat=(val,lbl,col)=>`<div style="flex:1;min-width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:${col}">${fmt(val)}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;">${lbl}</div></div>`;
+  let html='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:.7rem;">'
+    +stat(ontoNewest,'moved onto newest (PayPalPPCP)','var(--ok)')
+    +stat(offShutdown,'left all shutdown versions','var(--ep-red)')
+    +stat(newShops,'new shops since last upload','var(--pp)')
+    +stat(goneShops,'shops no longer present','var(--text3)')
+    +'</div>';
+  const tr=Object.entries(transitions).sort((a,b)=>b[1]-a[1]);
+  if(tr.length){
+    html+='<details><summary style="cursor:pointer;font-size:12px;color:var(--text2);font-weight:500;">Version-to-version movements ('+tr.length+' pairs)</summary>'
+      +'<table style="width:100%;margin-top:.6rem;font-size:12px;border-collapse:collapse;"><thead><tr style="text-align:left;color:var(--text3);">'
+      +'<th style="padding:4px 8px;">From</th><th style="padding:4px 8px;">To</th><th style="padding:4px 8px;text-align:right;">Shops</th></tr></thead><tbody>'
+      +tr.map(([k,c])=>{const [from,to]=k.split('');
+        return`<tr style="border-top:1px solid var(--border);"><td style="padding:4px 8px;color:${TC[typeOf(from)]}">${from}</td><td style="padding:4px 8px;color:${TC[typeOf(to)]}">${to}</td><td style="padding:4px 8px;text-align:right;font-weight:600;">${fmt(c)}</td></tr>`;}).join('')
+      +'</tbody></table><div style="font-size:11px;color:var(--text3);margin-top:6px;">Counts version movements; a shop swapping several gateways at once contributes to multiple pairs.</div></details>';
+  } else {
+    html+='<div style="color:var(--text3);font-size:13px;">No version changes since last upload.</div>';
+  }
+  body.innerHTML=html;
+}
+
+function ppRenderVersionBreakdown(ppShops){
   const body=document.getElementById('pp-version-body');
   const cnt=document.getElementById('pp-version-cnt');
   if(!ppShops.length){
-    body.innerHTML='<div style="padding:1.2rem;color:var(--text3);font-size:13px;text-align:center;">No PayPal Base shops found in current data.</div>';
+    body.innerHTML='<div style="padding:1.2rem;color:var(--text3);font-size:13px;text-align:center;">No PayPal shops found in current data.</div>';
     cnt.textContent=''; return;
   }
   const TYPE_COLOR={shutdown:'var(--ep-red)',newest:'var(--ok)',legacy:'var(--warn)',unknown:'var(--text3)'};
   const TYPE_LABEL={shutdown:'Shutdown',newest:'Newest',legacy:'Legacy',unknown:'Unclassified'};
-  let groups;
-  if(hasGw){
-    const gm={};
-    ppConfig.gateways.forEach(gw=>{ gm[gw.name]={type:gw.type,count:0}; });
-    ppShops.forEach(s=>{ const gw=ppGetGatewayInfo(s); if(gw)gm[gw.name].count++; });
-    groups=Object.entries(gm).filter(([,v])=>v.count>0).sort((a,b)=>b[1].count-a[1].count);
-  } else {
-    const pm={};
-    ppShops.forEach(s=>{ const k=s.payment||'(unknown)'; pm[k]=(pm[k]||0)+1; });
-    groups=Object.entries(pm).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,{type:'unknown',count:v}]);
-  }
+  // One row per distinct payment value (the real version), each classified shutdown/newest/legacy/unclassified.
+  const gm={};
+  ppShops.forEach(s=>{
+    const key=s.payment||'(unknown)';
+    if(!gm[key])gm[key]={type:ppGetGatewayType(s)||'unknown',count:0};
+    gm[key].count++;
+  });
+  const groups=Object.entries(gm).sort((a,b)=>b[1].count-a[1].count);
   const total=ppShops.length;
   cnt.textContent=groups.length+' version'+(groups.length!==1?'s':'');
   body.innerHTML=groups.map(([name,{type,count}])=>{
@@ -2865,12 +2979,14 @@ function ppRenderVersionBreakdown(ppShops,hasGw){
 }
 
 function ppRenderPartnerBreakdown(ppShops){
-  const pm={}, sm={};
+  const pm={};
   ppShops.forEach(s=>{
     const k=s.partner||'(no partner)';
-    if(!pm[k])pm[k]={total:0,newest:0};
-    pm[k].total++; if(ppGetGatewayType(s)==='newest')pm[k].newest++;
-    if(ppGetGatewayType(s)==='shutdown'){ sm[k]=(sm[k]||0)+1; }
+    if(!pm[k])pm[k]={total:0,newest:0,shutdown:0};
+    pm[k].total++;
+    const t=ppGetGatewayType(s);
+    if(t==='newest')pm[k].newest++;
+    if(t==='shutdown')pm[k].shutdown++;
   });
   const ps=Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
   document.getElementById('pp-partner-cnt').textContent=ps.length+' partners';
@@ -2882,14 +2998,14 @@ function ppRenderPartnerBreakdown(ppShops){
       <div class="bd-nums"><span class="pct" style="color:var(--ok)">${p}%</span> <span style="color:var(--text3)">newest / ${fmt(d.total)}</span></div>
     </div>`;
   }).join('');
-  const ss=Object.entries(sm).sort((a,b)=>b[1]-a[1]);
+  const ss=Object.entries(pm).filter(([,d])=>d.shutdown>0).sort((a,b)=>b[1].shutdown-a[1].shutdown);
   document.getElementById('pp-shut-cnt').textContent=ss.length+' partners affected';
-  document.getElementById('pp-shut-bd').innerHTML=ss.length?ss.map(([n,c])=>{
-    const pct=Math.round((c/ss[0][1])*100);
+  document.getElementById('pp-shut-bd').innerHTML=ss.length?ss.map(([n,d])=>{
+    const pct=Math.round((d.shutdown/d.total)*100);
     return`<div class="bd-row">
       <div class="bd-name" title="${n}">${n}</div>
       <div class="bd-bar-wrap"><div class="bd-bar" style="width:${pct}%;background:var(--ep-red)"></div></div>
-      <div class="bd-nums"><span class="pct" style="color:var(--ep-red)">${fmt(c)}</span> <span style="color:var(--text3)">shops</span></div>
+      <div class="bd-nums"><span class="pct" style="color:var(--ep-red)">${pct}%</span> <span style="color:var(--text3)">${fmt(d.shutdown)} / ${fmt(d.total)} shops</span></div>
     </div>`;
   }).join(''):'<div style="padding:1rem 0;color:var(--text3);font-size:13px;text-align:center;">No shutdown-version shops found.</div>';
 }
@@ -2934,6 +3050,8 @@ function ppDoSearch(){
     return (s.name||'').toLowerCase().includes(q)||(s.partner||'').toLowerCase().includes(q)
       ||(s.domain||'').toLowerCase().includes(q)||(s.alias||'').toLowerCase().includes(q)
       ||(s.payment||'').toLowerCase().includes(q)||(s.lastlogin?String(s.lastlogin):'').includes(q)
+      ||(s.shoptype||'').toLowerCase().includes(q)||(s.software||'').toLowerCase().includes(q)
+      ||(s.database||'').toLowerCase().includes(q)
       ||(isSlpr(s)&&'sleeper'.includes(q));
   });
   if(ppSortCol){ res=[...res].sort((a,b)=>{ let av=a[ppSortCol]||'',bv=b[ppSortCol]||''; const r=av<bv?-1:av>bv?1:0; return ppSortDir==='asc'?r:-r; }); }
@@ -2951,7 +3069,7 @@ function ppDoSearch(){
     legacy:  `<span class="badge" style="background:#fffbeb;color:var(--warn);border-color:#fde68a">Legacy</span>`,
     unknown: `<span class="badge ot">PayPal</span>`,
   };
-  const cols=[{key:'name',label:'Name'},{key:'partner',label:'Partner'},{key:'domain',label:'Domain'},{key:'payment',label:'Gateway'},{key:'lastlogin',label:'Last Login'}];
+  const cols=[{key:'name',label:'Name'},{key:'partner',label:'Partner'},{key:'domain',label:'Domain'},{key:'shoptype',label:'Shoptype'},{key:'payment',label:'Gateway'},{key:'lastlogin',label:'Last Login'}];
   const ths=cols.map(c=>{const s=ppSortCol===c.key;return`<th class="sortable${s?' sort-'+ppSortDir:''}" onclick="ppSortBy('${c.key}')">${c.label}<span class="sort-icon"></span></th>`;}).join('');
   const rows=shown.map(s=>{
     const sl=isSlpr(s), t=ppGetGatewayType(s)||'unknown';
@@ -2961,6 +3079,7 @@ function ppDoSearch(){
       <td><div style="font-weight:500">${s.name||s.alias}${slB}</div></td>
       <td>${s.partner||'–'}</td>
       <td>${dom}</td>
+      <td style="font-size:12px;color:var(--text2)">${s.shoptype||'–'}${s.software&&s.software!=='Unknown'?` <span style="font-size:10px;color:var(--text3)">(${s.software})</span>`:''}</td>
       <td>${TYPE_BADGE[t]||TYPE_BADGE.unknown} <span style="font-size:11px;color:var(--text3);margin-left:4px">${s.payment||'–'}</span></td>
       <td style="font-size:12px;color:${sl?'var(--sl)':'var(--text2)'}">${s.lastlogin||'–'}</td>
     </tr>`;
