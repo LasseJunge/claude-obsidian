@@ -28,7 +28,8 @@ Payment provider in the ePages stack. Per the [[meeting-2026-06-15-with-Chris|20
 - **Hard deadline: 01.01.27.**
 - To be **tracked like [[Spreedly]]** — the same offboarding/usage-tracking pattern now applied across [[Sage]] and [[Stripe]].
 - **Ask Karsten for the data** to establish an accurate tracking baseline.
-- Note from the meeting: **6 versions** exist, a **new version = more money**, and **472 deleted**.
+- Note from the meeting: **6 versions** exist, a **new version = more money**, and **2 integrations will be shut down** next year (the shutdown versions shops must switch off).
+- ⚠️ **Open conflict:** Chris says **2** versions are being shut down; Karsten says **3**. The exact set decides the `shutdown` gateway classification and the "On Shutdown Versions" KPI — confirm before finalizing. Candidates in the data: PayPal (1,082), PayPalPro (17), PayPalIntegralEvolution (7). Tracked in TODO.md.
 
 ## Dashboard
 

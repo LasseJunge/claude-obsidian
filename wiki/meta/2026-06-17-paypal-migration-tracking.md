@@ -79,9 +79,36 @@ Added shoptype, software, and database to the PayPal search, plus a Shoptype col
 
 For an HTML-embedded script with no build step, functions were extracted by name from the file and run in Node (`new Function` for syntax, `eval` of `parseCSV`/`ppGetGatewayType`/etc. for logic). A simulated "next week" CSV with known deltas (50 `PayPal→PayPalPPCP`, 20 `PayPalPlus→PayPalPPCP`, 5 new, 1 dropped) reproduced the exact expected panel numbers: changed 70, ontoNewest 70, offShutdown 50, new 5, gone 1.
 
+## Refinements later the same session (logic review follow-ups)
+
+A logic review surfaced a HIGH counting-unit inconsistency and a few smaller items; these were then fixed:
+
+- **Shop-based KPIs (worst-version-wins).** The headline KPIs originally counted gateway *entries* (15,251) while labelled "shops", double-counting multi-gateway shops. Clarified goal: the action is shops **switching off** their old PayPal versions. So KPIs, progress bar, and partner breakdowns now count **distinct shops** (`ppShopMap` aggregates entries by alias; `ppShopStatus` classifies each by worst version — **shutdown > legacy > newest**). "On Shutdown" = distinct shops that must switch before the deadline; "Total PayPal" = ~13,537 distinct shops. Version Distribution and the search table stay entry-based on purpose (they're about gateways/rows). Sub-label wording is "switch", not "deactivate".
+
+- **Cohort baseline (supersedes the count-based baseline above).** `ppShutBaseline` now stores the **alias set** of shops on shutdown at baseline (`{aliases:[...], date}`), not just a count. Progress = how many of *that original cohort* have since moved off shutdown — immune to new shutdown shops arriving later (which previously masked real migrations). New arrivals are surfaced separately ("N new on shutdown since baseline"). `ppShutCount` → `ppShutSet`. Old count-only baselines auto-upgrade on the next admin view.
+
+- **Scope-filtered diff.** Extracted `ppInScope`, applied to both the current set and `ppPrevShops` in `ppRenderChanges`, so the week-over-week diff compares like for like.
+
+- **Label fixes.** Sleeper KPI sub now reads "last login before 2026" (was the inaccurate "6+ months inactive"); the time-progress bar shows "set a start date to track time" instead of a misleading 0% when no start date is set.
+
+- **Churn + Autotranslate tabs moved into admin mode** (`admin-tab` + `display:none`), so the non-admin view shows only Spreedly Migration + PayPal Migration.
+
+Closed-by-design (not changed): baseline-seed *timing* (can't reconstruct a pre-migration snapshot retroactively); the unawaited baseline write (safe — `ppShutBaseline` is assigned synchronously before the fire-and-forget save).
+
+## Meeting reconciliation
+
+Cross-checked against [[meeting-2026-06-15-with-Chris]]: PayPal tracking marked done (Karsten's data received); the "general update timestamp" wish confirmed already built. Corrected a scan transcription error — "**472 deleted**" should read "**2 [integrations] shut down**" (the 2 shutdown versions). **Open conflict:** Chris said **2** versions are being shut down, Karsten said **3** — decides the `shutdown` gateway classification; confirm exact version names before finalizing.
+
 ## Process
 
-Used `/ponytail` (lean code mode) during the build and `/ponytail-review` after — the review merged two redundant version-distribution branches and dropped a now-unused `hasGw` param.
+Used `/ponytail` (lean code mode) during the build and `/ponytail-review` after — the review merged two redundant version-distribution branches and dropped a now-unused `hasGw` param. A later logic-review pass produced the refinements above.
+
+## Open
+
+- Gateway names/types still configured manually by admin; the longest-match fix lets `PayPalPro` / `PayPalIntegralEvolution` be classified independently once added.
+- Weekly CSVs must keep a consistent format; the diff keys on the stable UUID alias.
+- **Re-seed the shutdown baseline** (clear + reupload) so it becomes shop-based + cohort-format from a clean week-0.
+- **Resolve the 2-vs-3 shutdown-versions conflict** (Chris vs Karsten) before locking gateway config.
 
 ## Open
 

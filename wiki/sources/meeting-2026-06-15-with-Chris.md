@@ -44,11 +44,12 @@ A new **migration tracker** for shops moving from ePages **Base** to **Now**. Se
 - Key question: **what is the conversion between Base and Now** — i.e. *what is an "L" shop in Base?* (mapping package tiers across the two systems).
 - **Creation date** → and **when is it going live**.
 - Track **migration shops that didn't go live** — detection may be possible **without extra data**.
-- Want a **general update timestamp in the dashboard**.
+- [x] Want a **general update timestamp in the dashboard**. ✅ Done — admin bar shows "Dashboard last modified" (`ts-modified`, stamped by `dbStampModified` on any write) plus per-tab "last uploaded" timestamps via `updateUploadStrip`, persisted in Supabase `timestamps`.
 
 ## Auto Translate
 
 - Maybe **Karsten sends raw data to Enzio**.
+- **Correction: Marion has the data, not Karsten.** Requested it from Marion on 2026-06-17; **awaiting her reply** (no response yet as of 2026-06-17).
 - Relates to the existing AutoTranslate tracking work — see [[Questions Auto Translate]].
 
 ## PayPal
@@ -56,7 +57,7 @@ A new **migration tracker** for shops moving from ePages **Base** to **Now**. Se
 - **Goes live tomorrow** (≈2026-06-16); takes **effort to move**.
 - **Deadline: 01.01.27.**
 - **Track it the same way as [[Spreedly]]** (same pattern now applied to [[Sage]] and [[Stripe]] too).
-- Side notes: **ask Karsten for the data tomorrow** so the tracker has an accurate baseline; **6 versions** exist — **a new version = more money**; **472 deleted**.
+- Side notes: **ask Karsten for the data tomorrow** so the tracker has an accurate baseline; **6 versions** exist — **a new version = more money**; **2 [integrations] to be shut down** next year (these are the 2 shutdown versions shops must switch off).
 
 ## Sage
 
@@ -83,11 +84,11 @@ The recurring theme is **applying the [[ePages Spreedly Migration]] tracking pat
 
 ## Open Actions
 
-- [ ] **PayPal goes live tomorrow** — confirm tracking is in place; ask Karsten for the data to set an accurate baseline.
+- [x] **PayPal tracking in place** — full PayPal Migration tab built in the dashboard (version-upgrade KPIs, all 6 versions, shop-based "must switch" counts, shutdown-baseline progress bar, week-over-week version-migration diff). See [[2026-06-16-paypal-dashboard-build]] + [[2026-06-17-paypal-migration-tracking]]. **Karsten's data received** — `20260616_PayPal.csv` (15,251 gateway rows / 13,537 distinct shops) is the baseline, uploaded to Supabase. Weekly CSVs follow. _Only remaining:_ re-seed the shutdown baseline as shop-based on next upload (tracked in TODO.md).
 - [ ] Define the **Base→Now package mapping** (what is an "L" shop in Base, vs Now packages).
 - [ ] Ask **Kristof** whether his Sage feature-usage sheet is current.
 - [ ] Confirm scope of the **~350 Base shops** that must update to the HTK connector.
-- [ ] Decide how Base→Now / PayPal / Sage / Stripe tracking plug into [[epages-spreedly-migration-dashboard]].
+- [ ] Decide how Base→Now / PayPal / Sage / Stripe tracking plug into [[epages-spreedly-migration-dashboard]]. _PayPal: done (own tab). Sage / Stripe / Base→Now: not started._
 
 ## Source
 
