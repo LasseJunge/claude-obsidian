@@ -241,6 +241,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 .churn-chip button:hover{color:var(--ep-red);}
 /* Churn side KPI — standalone card next to chart */
 #page-churn .main{max-width:1760px;}
+#page-autotranslate .main{max-width:1760px;}
 .churn-bd-row{display:flex;gap:14px;align-items:stretch;margin-bottom:1.5rem;}
 .churn-bd-row .churn-bd-chart{flex:1;min-width:0;}
 .churn-kpi-card{width:460px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;display:flex;flex-direction:column;gap:14px;}
@@ -1770,6 +1771,43 @@ function atParseCost(s){
   return parseFloat(s)||0;
 }
 
+// ── AutoTranslation character budgets ─────────────────────────────────
+// Source: AutoTranslation Confluence page (AutoTranslationMaxPackageCharacters per ShopType).
+// AddOn purchase raises the hard cap to AutoTranslationMaxCharacters (25M) regardless of ShopType.
+const AT_ADDON_CAP=25000000;
+const AT_BUDGETS={
+  // ePages Cloud / Direct get the higher base table; everyone else the lower one.
+  cloudDirect:{NowM:1000000,NowL:1000000,NowXL:5000000},
+  other:      {NowM:500000, NowL:500000, NowXL:1000000},
+};
+// Largest base package across all tables (Cloud NowXL). A non-AddOn shop above this is definitively
+// over its package regardless of ShopType — so we can flag it even before the export carries shoptype.
+const AT_MAX_BASE=5000000;
+// Cloud/Direct = ePages-operated providers (epagesCloud, Direct/epagesDE…). Everyone else uses the lower table.
+function atIsCloudDirect(partner){
+  const p=(partner||'').toLowerCase();
+  return p.includes('epagescloud')||p.includes('direct')||p.startsWith('epages');
+}
+// Normalize a raw shoptype string to a Now tier (NowS/M/L/XL) if recognizable, else ''.
+function atShopTier(shoptype){
+  const s=(shoptype||'').toLowerCase().replace(/[\s_-]/g,'');
+  if(s.includes('nowxl')) return 'NowXL';
+  if(s.includes('nowl'))  return 'NowL';
+  if(s.includes('nowm'))  return 'NowM';
+  if(s.includes('nows'))  return 'NowS';
+  return '';
+}
+// Effective character budget for a shop. AddOn → flat 25M cap (reliable from the current CSV).
+// Otherwise the per-ShopType base budget, which needs a known Now tier (NowS has no package).
+// Returns null when the budget can't be determined (e.g. shoptype absent until the scheduled export lands).
+function atEffectiveBudget(e){
+  if(e.addOnBought) return AT_ADDON_CAP;
+  const tier=atShopTier(e.shoptype);
+  if(!tier||tier==='NowS') return null;
+  const table=atIsCloudDirect(e.partner)?AT_BUDGETS.cloudDirect:AT_BUDGETS.other;
+  return table[tier]??null;
+}
+
 function atParseCSV(text){
   const lines=text.trim().split('\n');
   if(lines.length<2) return [];
@@ -1806,6 +1844,8 @@ function atParseCSV(text){
       shopCharacters: parseInt(row['shopcharacters'])||0,
       translatedCharacters: parseInt(row['translatedcharacters'])||0,
       costsDeepl: atParseCost(row['costsdeepl']||''),
+      // Present once the scheduled usageAutoTranslation.pl export carries it; empty in the hand-assembled CSVs.
+      shoptype: (row['shoptype']||'').trim(),
       addOnBought: (vals[7]||'').trim()==='AddOnBought',
       addOnDate: (vals[8]||'').trim(),
     };
@@ -1949,14 +1989,24 @@ function atRenderTable(){
   const byAlias={};
   rows.forEach(r=>{
     const key=r.alias||r.store;
-    if(!byAlias[key]) byAlias[key]={alias:key,partner:r.partner,domain:r.domain,tlc:0,shopChars:0,translatedChars:0,cost:0,addOnBought:false,addOnDate:''};
+    if(!byAlias[key]) byAlias[key]={alias:key,partner:r.partner,domain:r.domain,shoptype:'',tlc:0,shopChars:0,translatedChars:0,cost:0,addOnBought:false,addOnDate:''};
     byAlias[key].tlc=Math.max(byAlias[key].tlc,r.translatedLanguageCount);
     byAlias[key].shopChars+=r.shopCharacters;
     byAlias[key].translatedChars+=r.translatedCharacters;
     byAlias[key].cost+=r.costsDeepl;
+    if(!byAlias[key].shoptype&&r.shoptype) byAlias[key].shoptype=r.shoptype;
     if(r.addOnBought){byAlias[key].addOnBought=true;if(r.addOnDate)byAlias[key].addOnDate=r.addOnDate;}
   });
   let entries=Object.values(byAlias);
+  // Budget utilization: translated chars vs the shop's effective character budget (per-shop total, not per-language).
+  // budgetPct=-1 sorts unknowns last. overPackageNoAddon = a non-AddOn shop definitively past its package and
+  // therefore a billing gap: either the exact % is >=100, or — when ShopType is unknown — usage already exceeds
+  // the largest base package any tier could grant (AT_MAX_BASE), so it's over regardless of tier.
+  entries.forEach(e=>{
+    e.budget=atEffectiveBudget(e);
+    e.budgetPct=e.budget?(e.translatedChars/e.budget)*100:-1;
+    e.overPackageNoAddon=!e.addOnBought && ((e.budget&&e.budgetPct>=100) || (!e.budget&&e.translatedChars>AT_MAX_BASE));
+  });
   if(atSearchQ){
     entries=entries.filter(e=>
       (e.alias||'').toLowerCase().includes(atSearchQ)||
@@ -1967,12 +2017,23 @@ function atRenderTable(){
   const sortKey=atSortCol||'cost';
   const dir=atSortCol?atSortDir:'desc';
   entries.sort((a,b)=>{const av=a[sortKey]??'',bv=b[sortKey]??'';const r=av<bv?-1:av>bv?1:0;return dir==='asc'?r:-r;});
-  const cols=[{key:'alias',label:'Shop (Alias)'},{key:'partner',label:'Partner'},{key:'domain',label:'Domain'},{key:'tlc',label:'Languages'},{key:'shopChars',label:'Shop Chars'},{key:'translatedChars',label:'Translated Chars'},{key:'cost',label:'Cost (DeepL)'},{key:'',label:''}];
+  const cols=[{key:'alias',label:'Shop (Alias)'},{key:'partner',label:'Partner'},{key:'domain',label:'Domain'},{key:'tlc',label:'Languages'},{key:'shopChars',label:'Shop Chars'},{key:'translatedChars',label:'Translated Chars'},{key:'budgetPct',label:'Budget Use'},{key:'cost',label:'Cost (DeepL)'},{key:'',label:''}];
   const ths=cols.map(c=>{if(!c.key)return`<th></th>`;const s=atSortCol===c.key;return`<th class="sortable${s?' sort-'+atSortDir:''}" onclick="atSortBy('${c.key}')">${c.label}<span class="sort-icon"></span></th>`;}).join('');
   const trows=entries.map(e=>{
     const util=e.shopChars>0?Math.round((e.translatedChars/e.shopChars)*100):0;
     const dom=e.domain?`<a href="https://${e.domain}" target="_blank" class="domain">${e.domain}</a>`:`<span style="color:var(--text3)">–</span>`;
     const addOn=e.addOnBought?`<span class="badge st" title="AddOn bought${e.addOnDate?' · '+e.addOnDate:''}"><i class="ti ti-plus" style="font-size:10px"></i> AddOn${e.addOnDate?' · '+e.addOnDate:''}</span>`:'';
+    // Budget Use: translated chars vs effective budget. Banded green/amber/red; "–" when budget is undeterminable.
+    let budCell=`<span style="color:var(--text3)" title="Budget unknown – needs ShopType (pending the scheduled export)">–</span>`;
+    if(e.budget){
+      const bpct=Math.round(e.budgetPct);
+      const bcolor=bpct>=100?'#dc2626':bpct>=80?'#d97706':'#16a34a';
+      const capNote=e.addOnBought?'25M (AddOn cap)':fmt(e.budget)+(atShopTier(e.shoptype)?' ('+atShopTier(e.shoptype)+')':'');
+      budCell=`<span style="color:${bcolor};font-weight:600" title="${fmt(e.translatedChars)} / ${capNote}">${bpct}%</span>`;
+    } else if(e.overPackageNoAddon){
+      // ShopType unknown, but usage already exceeds the largest possible base package and no AddOn was bought.
+      budCell=`<span style="color:#dc2626;font-weight:600" title="${fmt(e.translatedChars)} chars, no AddOn — over every base package (max ${fmt(AT_MAX_BASE)}). Exact % needs ShopType.">&gt;100%</span>`;
+    }
     return`<tr>
       <td style="font-weight:500">${e.alias}</td>
       <td style="font-size:12px;color:var(--text2)">${e.partner||'–'}</td>
@@ -1980,12 +2041,22 @@ function atRenderTable(){
       <td style="font-size:12px;color:var(--text2)">${e.tlc||'–'}</td>
       <td style="font-size:12px;color:var(--text2)">${fmt(e.shopChars)}</td>
       <td style="font-size:12px"><span style="color:var(--text)">${fmt(e.translatedChars)}</span>${util>0?`<span style="color:var(--text3);font-size:11px;margin-left:4px">${util}%</span>`:''}</td>
+      <td style="font-size:12px">${budCell}</td>
       <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--at)">${atFmtEuro(e.cost)}</td>
       <td>${addOn}</td>
     </tr>`;
   }).join('');
-  document.getElementById('at-table-count').textContent=entries.length+' shops';
-  document.getElementById('at-table-body').innerHTML=`<div class="tw"><table><thead><tr>${ths}</tr></thead><tbody>${trows||'<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">No data for selected filters</td></tr>'}</tbody></table></div>`;
+  // Summarize shops at/over 80% of their budget, and call out AddOn shops past the hard 25M cap.
+  const budgeted=entries.filter(e=>e.budget);
+  const nearOver=budgeted.filter(e=>e.budgetPct>=80).length;
+  const overCap=entries.filter(e=>e.addOnBought&&e.budgetPct>=100).length;
+  const overPkg=entries.filter(e=>e.overPackageNoAddon).length;
+  const countEl=document.getElementById('at-table-count');
+  countEl.textContent=entries.length+' shops'+(budgeted.length?` · ${nearOver} ≥80% of budget`:'');
+  const addFlag=(n,label,title)=>{ if(!n) return; const s=document.createElement('span'); s.style.cssText='color:#dc2626;font-weight:700;margin-left:8px'; s.title=title; s.textContent=`· ${n} ${label}`; countEl.appendChild(s); };
+  addFlag(overPkg,'over base pkg (no AddOn)','Non-AddOn shops past their package budget — should have been prompted to buy the AddOn. Likely billing gap.');
+  addFlag(overCap,'over AddOn cap','AddOn shops translating beyond the 25M AutoTranslationMaxCharacters ceiling — overage cost not covered by the AddOn package.');
+  document.getElementById('at-table-body').innerHTML=`<div class="tw"><table><thead><tr>${ths}</tr></thead><tbody>${trows||'<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">No data for selected filters</td></tr>'}</tbody></table></div>`;
 }
 
 function atOnSearch(){

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TODO.md",
+                "file": "wiki/questions/Open Questions and Blockers.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO"
+              "title": "Open Questions and Blockers"
             }
           }
         ]
@@ -201,8 +201,23 @@
       "bases:Create new base": false
     }
   },
-  "active": "d8de6df6ff4c27ee",
+  "active": "097e8347bb8aa054",
   "lastOpenFiles": [
+    "assets/diagrams/vault-flow.svg",
+    "TODO.md.tmp.38336.5d780fdfc221",
+    "wiki/questions/Open Questions and Blockers.md",
+    "wiki/questions/Questions Auto Translate.md.tmp.38336.0d1cb19aa940",
+    "assets/diagrams/multi-writer-locking.svg",
+    "assets/diagrams/hybrid-retrieval.svg",
+    "agents/verifier.md",
+    "agents/wiki-lint.md",
+    "agents/wiki-ingest.md",
+    "_templates/question.md",
+    "_templates/concept.md",
+    "_templates/comparison.md",
+    "_attachments/images/notes-15-06-page2.png",
+    "_attachments/images/notes-15-06-page1.png",
+    "TODO.md",
     "wiki/meta/2026-06-23-at-ticket-paypal-perf-and-lint.md",
     "wiki/meta/lint-report-2026-06-23.md.tmp.38336.2fac5ed6cacd",
     "wiki/meta/lint-report-2026-06-23.md",
@@ -212,7 +227,6 @@
     "wiki/questions/UNITY-9917-export-request-draft.md",
     "TODO.md.tmp.920.7df0019c62e4",
     "wiki/concepts/Base to Now Tracker.md",
-    "TODO.md",
     "wiki/immo/kleinanzeigen-zu-verkaufen-2-zi-w-vermietet-als-kapitalanlage-in-hamburg-m-32808680.md",
     "wiki/concepts/SVG Diagram Style Guide.md",
     "ImmoScout24.md",
@@ -222,15 +236,8 @@
     "wiki/immo/immoscout-gepflegte-eigentumswohnung-auf-grozugigem-erbpachtgrundstuck-16788952.md",
     "wiki/meta/dragonscale-frontier-graph.svg",
     "wiki/sources/Recharts vs. Chart.js — 2026 Entscheidungsgrundlage.md",
-    "agents/wiki-lint.md",
     "wiki/meta/lint-report-2026-06-17.md",
     "wiki/meta/lint-report-2026-06-17.md.tmp.32740.656243056eee",
-    "agents/wiki-ingest.md",
-    "agents/verifier.md",
-    "_templates/concept.md",
-    "_templates/comparison.md",
-    "_attachments/images/notes-15-06-page2.png",
-    "_attachments/images/notes-15-06-page1.png",
     "wiki/comparisons/Wiki vs RAG.md",
     "wiki/comparisons/claude-obsidian-ecosystem.md",
     "wiki/canvases/claude-obsidian-presentation.canvas",
@@ -240,18 +247,10 @@
     "wiki/questions/Questions Auto Translate.md",
     "wiki/sources/meeting-2026-06-15-with-Chris.md",
     "wiki/concepts/Base to Now Tracker.md.tmp.36568.a8cdb5f5b857",
-    "wiki/concepts/Base to Now Tracker.md.tmp.36568.d65cc478f99a",
-    "TODO.md.tmp.36568.6ff96fbb9287",
-    "wiki/meta/2026-06-17-paypal-migration-tracking.md",
     "wiki/meta/workflow-loop.gif",
     "wiki/meta/wiki-graph-grow.gif",
-    "wiki/immo/kleinanzeigen-vermietete-eigentumswohnung-im-elbvorort-rissen-33103096.md",
     "wiki/meta/claude-obsidian-gif-1x1.gif",
-    "tools/honest-signal-lab/README.md",
     "Untitled.canvas",
-    "tools/immo-agent/is24-Hamburg-zwangsversteigerung.png",
-    "tools/immo-agent/is24-Hamburg-wohnung.png",
-    "tools/immo-agent/is24-debug.png",
     "wiki/canvases/main.canvas",
     "wiki/Wiki Map.canvas"
   ]

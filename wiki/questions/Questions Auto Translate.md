@@ -251,6 +251,41 @@ From the [AutoTranslation and Stripe Billing](https://epages.atlassian.net/wiki/
 
 ---
 
+## ⚠️ Shops over the 25M AddOn cap (for the Chris call)
+
+Found 2026-06-23 in the loaded dashboard data: two shops have translated **beyond the 25M `AutoTranslationMaxCharacters` ceiling** — i.e. past even the paid AddOn package.
+
+- **www.tiendadebastones.com** (Arsys) — the AddOnBought table records 28,662,859 chars (573.26 €), already > 25M.
+- **www.glassstudiosupplies.co.uk** (epagesCloud / epagesUK) — over cap in the live data. ⚠️ The snapshot table above shows it at 7,851,952 chars **without** an AddOn (May 20, 2026, #2031639, UNITY-10204), so the live figures have moved since that screenshot — reconcile against the current export.
+
+### Shops over their base package with NO AddOn (the bigger billing gap)
+
+Also found 2026-06-23: shops at **5.5M, 10M, and 20M** translated characters **without an AddOn**. Every base package tops out at 5M (Cloud NowXL), so these are unambiguously over budget regardless of ShopType — yet they bought nothing extra. At 20 €/1M that's ≈ **110 € / 200 € / 400 €** of DeepL cost each, on shops paying no AddOn. They should have been forced through the MBO → Stripe prompt. This is a larger leak than the over-cap shops.
+
+The dashboard flags these today even without ShopType data: any non-AddOn shop over 5M shows red **>100%** in Budget Use and is counted as "**N over base pkg (no AddOn)**" in the header.
+
+**Questions to raise with Chris:**
+1. Is the 25M cap actually **enforced**, or does the scheduler keep translating past it (making 25M a billing tier, not a stop)?
+2. Same question for the **base package** — non-AddOn shops at 5.5M/10M/20M imply the package limit isn't a hard stop either, and the MBO/Stripe prompt isn't blocking continued translation.
+3. Is the **overage billed** at all (25M+ for AddOn shops; package+ for non-AddOn shops, at 20 €/1M)? If not, that cost is leaking.
+4. Do these shops need manual intervention now?
+
+### AddOn flag discrepancy: Confluence vs CSV (data reliability)
+
+The dashboard derives the AddOn badge **only from the CSV `AddOnBought` column** (CSV = live source of truth; the Confluence list is a point-in-time snapshot — decision 2026-06-23 to keep it CSV-only, not hardcode the Confluence list). Reconciling the Confluence `AutoTranslationAddOnBought` table against the loaded CSV (2026-06-23):
+
+- **Match:** www.tiendadebastones.com, fossilien-mineralien.org, www.skoldtimer.de — AddOn in both, dates align.
+- **CSV newer than Confluence:** www.glassstudiosupplies.co.uk and www.shop-wittlich.de show AddOn in the CSV but were in the Confluence *tracked* (non-AddOn) table — they bought it after the snapshot. Expected.
+- **❌ Discrepancy:** **retterstore.de** and **www.iberianwinesandfood.com** are listed AddOnBought in Confluence (both Feb 23 2026, both **"doesn't need to pay – WB"** waivers) but the CSV carries **no AddOn flag** for them.
+
+**Question for Chris:** is `AutoTranslationAddOnBought` set consistently in the system, **including waiver ("WB") shops**? If waivers don't get the flag, any tool reading the CSV will misclassify them (and they'd show as over-budget once usage grows). This is the same enforcement/data-integrity theme as the cap questions above.
+
+### Is the limit per language or per shop? → **per shop (total)**
+
+Confirmed by re-reading the Confluence tables 2026-06-23. `AutoTranslationMaxPackageCharacters` is a single shop attribute (base-tier sibling of the 25M `AutoTranslationMaxCharacters` cap, which is plainly a per-shop total). The clincher: Cloud **NowM (1 language) = 1M** and **NowL (3 languages) = 1M** — equal budget despite different language counts, so the "additional languages" column is an entitlement, not a per-language multiplier. Characters are *consumed* per language (each translated once) but counted against one cumulative per-shop total; the CSV's `TranslatedCharacters` is already that shop-level sum. The dashboard compares total-vs-budget, which is correct. (Inference from table structure, not an explicit statement — worth a one-line confirm with Chris.)
+
+---
+
 ## Open Questions
 
 - [x] Why is the translated character count sometimes higher than the shop character count?
