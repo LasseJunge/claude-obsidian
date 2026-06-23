@@ -19,6 +19,16 @@ Navigation: [[index]] | [[hot]] | [[overview]]
 
 Append-only. New entries go at the TOP. Never edit past entries.
 
+## [2026-06-23] save | AutoTranslate export ticket, PayPal perf memo, and lint pass
+- Type: session
+- Location: wiki/meta/2026-06-23-at-ticket-paypal-perf-and-lint.md
+- From: maintenance session — drafted AutoTranslate export Jira case (comment-first, ticket pending), deleted stray ImmoScout24.md, memoized PayPal gateway lookups (ppGwCache), ran 316-page lint (one real dead link fixed; alias false positives noted)
+
+## [2026-06-23] save | AutoTranslate data answers + Conversion Dashboard deploy-lag
+- Type: session
+- Location: wiki/meta/2026-06-23-autotranslate-data-and-dashboard-deploy.md
+- From: Marion's email + two Confluence pages (AutoTranslation; AutoTranslation and Stripe Billing) folded into [[Questions Auto Translate]]; drafted [[UNITY-9917-export-request-draft]]; diagnosed Conversion Dashboard "missing changes" as a stale Netlify deploy (file on disk byte-identical to download and already correct)
+
 ## [2026-06-17] save | PayPal Dashboard — Migration Tracking & Data-Model Fixes
 - Type: session
 - Location: wiki/meta/2026-06-17-paypal-migration-tracking.md

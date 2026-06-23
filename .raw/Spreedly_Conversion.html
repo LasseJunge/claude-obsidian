@@ -2827,13 +2827,19 @@ async function dbSavePayPalConfig(){
   await sb.from('mappings').upsert({id:'paypal_config', data:ppConfig});
 }
 
+// Per-render memo: gateway info is a pure function of (payment string, current config).
+// Cleared at the top of ppRefresh, the one chokepoint every config change flows through,
+// so the same payment string is classified once instead of on every entry, every render.
+let ppGwCache=new Map();
 function ppGetGatewayInfo(s){
   const p=(s.payment||'').toLowerCase();
+  if(ppGwCache.has(p)) return ppGwCache.get(p);
   // Most specific (longest) matching substring wins, so "PayPalPro" isn't swallowed by a "PayPal" gateway.
   let best=null;
   for(const gw of ppConfig.gateways){
     if(gw.name && p.includes(gw.name.toLowerCase()) && (!best || gw.name.length>best.name.length)) best=gw;
   }
+  ppGwCache.set(p,best);
   return best;
 }
 function ppIsPayPalShop(s){
@@ -2854,6 +2860,7 @@ function ppInScope(s){
 function ppDetectShops(){ return ppShops.filter(ppInScope); }
 
 function ppRefresh(){
+  ppGwCache.clear(); // config may have changed since last render; rebuild the gateway-info memo
   const ppShops=ppDetectShops();
   if(!ppShops.length){
     document.getElementById('pp-no-data').style.display='flex';
