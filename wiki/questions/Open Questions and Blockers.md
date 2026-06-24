@@ -2,7 +2,7 @@
 type: question
 title: "Open Questions and Blockers"
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-06-24
 tags:
   - blockers
   - open-questions
@@ -52,18 +52,51 @@ Path to an automated feed. Comment posted 2026-06-23; ticket draft ready at [[au
 
 Blocked before any build can start. Plan: [[Base to Now Tracker]].
 
-- [ ] **Scope:** all Base shops, only Now-instances, or separate files?
-- [ ] **"Went live" signal:** a go-live date or a status field?
-- [ ] **Shop-type data + Base→Now shoptype mapping** (reuse existing Shop Type Mapping; "what is an L shop").
-- [ ] **In-scope definition** (the denominator for "% live").
-- [ ] **One row per shop, or repeats?**
-- [ ] **Column names + update cadence.** → Easiest unblock: **get a sample export file.**
+**Schema received 2026-06-24** — columns + `migrationstatus` enum confirmed; full mapping in [[Base to Now Tracker]]. Mostly unblocked — building can start on assumptions.
+
+- [x] **Scope:** all Base shops, one row each (option a).
+- [x] **"Went live" signal:** `migrationstatus` ∈ {`FINAL_DONE`=128, `FINAL_DONE_AND_PREP_DELETED`=1024}; `finalmigration` gives the date.
+- [x] **Column names + cadence:** confirmed; **monthly**, key = `shopid`.
+- [ ] **Shoptype + Base→Now mapping** — *not in this export; arrives next month.* Still need the "what is an L shop" mapping then.
+- [ ] **`closedbymerchant` format + exclude from denominator?** (assuming yes — churned.)
+- [ ] **`ABORTED` (512)** — own segment but excluded from % live? (assuming yes.)
+- [ ] **Confirm `migrationstatus` is single-value, not an OR'd bitmask.**
+
+> [!example]- Paste-ready message for Karsten (DE) — sent 2026-06-24
+> Hi Karsten,
+>
+> für den **Base-→-Now-Tracker** brauche ich noch ein paar Infos zum Export, bevor ich bauen kann.
+>
+> **Am schnellsten wäre eine Beispiel-Exportdatei** (gern anonymisiert). Eine echte CSV beantwortet die meisten Fragen unten auf einen Blick — Spaltennamen, das Go-live-Signal, ob der Shoptype enthalten ist und wie die Zeilen aufgebaut sind. Falls das schnell geht, brauche ich danach vielleicht nur noch 1–2 Rückfragen.
+>
+> Falls ein Sample nicht schnell machbar ist, bräuchte ich diese Punkte explizit:
+>
+> 1. **Umfang / Zeilenstruktur** — welche Variante ist der Export? (a) alle Base-Shops, mit Migrations-Status-Spalten je Zeile, oder (b) nur Shops, die bereits eine Now-Instanz haben, oder (c) getrennte Base- und Now-Dateien, verknüpft über den Shop-Key. → Davon hängt ab, ob wir „noch nicht gestartet" anzeigen können und was der Nenner für „% live" ist.
+> 2. **„Live gegangen"-Signal** — gibt es eine **Go-live-Datums**-Spalte (leer = noch nicht live), oder ein explizites **Status-Feld**? Falls Status-Feld: welche Werte sind möglich?
+> 3. **Shoptype + Mapping** — enthält der Export den **Now**-Shoptype, nur den **Base**-Shoptype oder beide? In jedem Fall brauche ich das **Mapping Base-Shoptype → Now-Shoptype** — konkret: „Was ist ein ‚L'-Shop in Base, und was wird daraus in Now?"
+> 4. **Definition „in scope"** — welche Base-Shops sollen tatsächlich migrieren (alle / nur aktive / bestimmte Pakete)? Das legt den Nenner für „% live" fest.
+> 5. **Eine Zeile pro Shop, oder kann ein Shop mehrfach vorkommen?**
+> 6. **Spalten-Bestätigung** — bitte die genauen Spaltennamen für: **Erstellungsdatum**, **Reseller**, **Land**, **Shop-URL**, **Shoptype** und den **Shop-Key/ID**, über den Zeilen über mehrere Uploads hinweg verknüpft werden.
+> 7. **Aktualisierungs-Rhythmus** — wie oft wird der Export aktualisiert (wöchentlich? zum 4.? ad hoc)? Brauche ich für den Woche-zu-Woche-Diff („seit letztem Upload live gegangen").
+>
+> Schon geklärt, also **nicht** nötig zu beantworten: ein stabiler Shop-Key existiert, und es gibt **keine** Migrations-Deadline (also kein Countdown — das Dashboard zeigt nur % live vom Scope).
+>
+> Danke dir!
 
 ## For Chris + Karsten (PayPal migration)
 
 Context: [[2026-06-17-paypal-migration-tracking]].
 
-- [ ] **How many PayPal versions are being shut down — 2 or 3?** Chris said 2, Karsten said 3. Karsten owns the CSV (likely authoritative). Confirm exact version names. Candidates in the data: PayPal (1,082), PayPalPro (17), PayPalIntegralEvolution (7). → Decides which values are classified `shutdown` → the "On Shutdown Versions" KPI + migration target.
+- [x] **How many PayPal versions are being shut down — 2 or 3?** Chris said 2, Karsten said 3. Karsten owns the CSV (likely authoritative). Confirm exact version names. Candidates in the data: PayPal (1,082), PayPalPro (17), PayPalIntegralEvolution (7). → Decides which values are classified `shutdown` → the "On Shutdown Versions" KPI + migration target.
+
+## For the team (OpenClaw / company Mattermost agent — evaluation)
+
+Idea: integrate [[OpenClaw]] company-wide, chat to it on [[Mattermost]], give it Rovo + Atlassian access. Context: [[Chat-Native AI Agents]]. Open decisions before piloting:
+
+- [ ] **Multi-tenancy fit.** OpenClaw is explicitly **single-operator** ([[Single-Operator Trust Boundary]]) and disclaims hostile multi-tenant isolation. Decide: small trusted group on one gateway, per-team/per-user gateways, or a multiplayer-by-design platform (cf. [[Aquifer Agent Platform]])?
+- [ ] **Rovo/Atlassian access** is not built in — who builds the custom skill/MCP, and read-only or write-enabled (with audit trail)?
+- [ ] **Permission propagation:** does the bot answer as itself (sees everything) or scoped to the asking user? The #1 governance question for Atlassian data.
+- [ ] **EU data residency:** where does the model run and where does prompt/transcript data go? ([[ePages]] is EU-based.)
 
 ---
 
@@ -71,8 +104,11 @@ Context: [[2026-06-17-paypal-migration-tracking]].
 
 | Thread | Blocked on | Status |
 |--------|-----------|--------|
-| AutoTranslate budget findings | Chris call | questions ready |
-| AutoTranslate automated feed | R&D ticket | comment posted, ticket pending |
-| Base → Now tracker | Karsten (sample export) | not started |
-| PayPal shutdown KPI | Chris + Karsten | gateway config pending answer |
+| AutoTranslate budget findings | Chris call | questions ready — **chased 2026-06-24** (priority) |
+| AutoTranslate automated feed | R&D ticket | comment posted, ticket pending — **chased 2026-06-24** |
+| Base → Now tracker | shoptype (next export) | **schema received 2026-06-24 — ready to build on assumptions** |
+| PayPal shutdown KPI | Chris + Karsten | gateway config pending answer — **chased 2026-06-24** |
+
+> [!note] Chased 2026-06-24
+> No answers received since the questions were raised 2026-06-23. Sent per-person follow-ups to Chris (AutoTranslate call — priority), Karsten (Base→Now sample export + PayPal version count), and R&D (export ticket). Awaiting replies.
 </content>

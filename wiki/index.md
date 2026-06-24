@@ -23,7 +23,7 @@ related:
 
 # Wiki Index
 
-Last updated: 2026-06-16 | Total pages: 101 | Sources ingested: 29
+Last updated: 2026-06-24 | Total pages: 114 | Sources ingested: 31
 
 Navigation: [[overview]] | [[log]] | [[hot]] | [[dashboard]] | [[Wiki Map]] | [[getting-started]]
 
@@ -37,6 +37,8 @@ Navigation: [[overview]] | [[log]] | [[hot]] | [[dashboard]] | [[Wiki Map]] | [[
 
 ## Sessions
 
+- [[2026-06-24-openclaw-company-agent-exploration]] — evaluating a company-wide OpenClaw agent on Mattermost with Atlassian/Rovo access; use-case layers + 2 caveats (single-operator, no native Atlassian) + alternatives shortlist (Onyx/Falconer/Dust/Rovo) with recommendation (status: developing)
+- [[2026-06-24-base-to-now-dashboard-build]] — built the Base→Now migration tab from Karsten's monthly export; reframed KPIs from a (wrong) % progress bar to a stock/flow/risk tracker; `migrationstatus` enum mapping; "closed" treated as info not churn; per-shop notes feature; velocity chart + stall-by-age (median 3.4 yr in prep) (status: current)
 - [[2026-06-23-autotranslate-data-and-dashboard-deploy]] — AutoTranslate data answers (Marion + 2 Confluence pages: per-ShopType budgets, DeepL pricing, the `usageAutoTranslation.pl` export script, booked-AddOn shops) + Conversion Dashboard deploy-lag diagnosis (live Netlify was a stale build; file on disk is correct) (status: current)
 - [[2026-06-17-paypal-migration-tracking]] — PayPal tab: one-row-per-gateway dedup fix, longest-match gateway classification (all 6 versions), shutdown-baseline progress bar, week-over-week version-migration diff panel, stale-baseline fix, tab de-admin-gated (status: current)
 - [[2026-06-16-paypal-dashboard-build]] — initial PayPal Migration tab build: version-upgrade KPIs, admin-configurable gateways, independent CSV layer, TDZ render bug fix (status: current)
@@ -77,12 +79,23 @@ Navigation: [[overview]] | [[log]] | [[hot]] | [[dashboard]] | [[Wiki Map]] | [[
 - [[Alpha Decay and Transaction Costs]] — where gross edges die; cost wall + ~26% German Abgeltungssteuer math (status: current)
 - [[LLMs in Investing]] — good at reading text, unproven at beating the market; look-ahead bias is the killer (status: current)
 - [[Honest Stock-Signal Tool Blueprint]] — how to build it as a truth-finding instrument: point-in-time data, purged CV, net-of-cost eval (status: current)
+- [[Chat-Native AI Agents]] — AI agents living inside team chat (Slack/Mattermost) as participants; use-case map + the 3 design decisions (read-vs-write, permission propagation, EU data residency) (status: current)
+- [[Aquifer Agent Platform]] — Shopify's internal platform running its Slack agent River; the architectural bar for a real multi-user company agent (status: current)
+- [[Brain-Hands Agent Architecture]] — decouple the agent's decision loop (brain) from its disposable execution sandbox (hands) (status: current)
+- [[Durable Agent Sessions]] — treat agent conversations as durable, Postgres-backed, append-only objects that survive host restarts (status: current)
+- [[Single-Operator Trust Boundary]] — OpenClaw's explicit single-user security model; NOT a multi-tenant boundary (status: current)
+- [[Chat-Native Agent Tools — OpenClaw vs Alternatives]] — comparison of OpenClaw / Onyx / Dust / Falconer / Rovo / Glean for a Mattermost + Atlassian, EU-self-host agent (status: current)
+- [[Nix]] — reproducible, content-addressed environments; precondition for running agent fleets safely (status: current)
 
 ---
 
 ## Entities
 
 - [[ePages]] — German e-commerce SaaS; Base and Now variants; partner/reseller model (status: current)
+- [[OpenClaw]] — open-source self-hosted gateway connecting chat apps (incl. Mattermost) to AI coding agents; single-operator model (status: current)
+- [[Shopify]] — ecommerce platform; publisher of "Under the River"; runs the River agent on its Aquifer platform (status: current)
+- [[Mattermost]] — open-source self-hosted team chat; the channel surface for a company AI agent; OpenClaw integration specifics (status: current)
+- [[Peter Steinberger]] — developer (@steipete), creator of OpenClaw (status: current)
 - [[Spreedly]] — payment gateway being retired; ePages migrating shops off it (status: current)
 - [[Stripe]] — target payment gateway for ePages migration; also used for Stripe trial subscription tracking (status: current)
 - [[Sage]] — payment/accounting connector; new "HTK" connector, ~350 Base shops must update; track usage like Spreedly (status: current)
@@ -105,6 +118,8 @@ Navigation: [[overview]] | [[log]] | [[hot]] | [[dashboard]] | [[Wiki Map]] | [[
 
 ## Sources
 
+- [[Under the River — Shopify Agent Platform]] — 2026-05-28 | Shopify Engineering | how Shopify runs River, its Slack-native AI agent, on the Aquifer platform (brain/hands, durable sessions, monorepo + Nix)
+- [[OpenClaw — Self-Hosted Chat-to-Agent Gateway]] — 2026-06-24 | docs | self-hosted gateway from chat apps (incl. Mattermost) to AI agents; single-operator security model; no native Atlassian/Rovo
 - [[claude-code-dashboard-best-practices]] — 2026-06-09 | web research | Claude Code + Dashboard: Spec-First, Recharts, Context-Management, Kosten
 - [[recharts-vs-chartjs-2026]] — 2026-06-09 | web research | Recharts 85/100 vs Chart.js 67/100; Recharts Standard für React
 - [[obsidian-second-brain-ai-stack-2026]] — 2026-06-09 | web research | PKM Second Brain mit Obsidian + AI, Zettelkasten-Prinzipien, 2026-Update

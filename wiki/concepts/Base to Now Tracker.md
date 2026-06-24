@@ -66,16 +66,51 @@ Base shops (in scope)
 - **Stable shop key exists** → week-over-week diff ("gone live since last upload") keys on that ID, like PayPal's UUID alias.
 - **No deadline** for the Base→Now migration → no countdown / time-progress bar. Progress bar shows **% live of scope** only.
 
-### BLOCKED — data-schema questions still open with Karsten before building
+### Confirmed schema (2026-06-24, from Karsten)
 
-1. **Scope / one row per…** — is it (a) all Base shops with migration-status columns, (b) only shops that already have a Now instance, or (c) separate Base + Now files matched by the shop key? Determines whether "not started" is showable and what the "% live" denominator is.
-2. **"Went live" signal** — a go-live *date* column (empty = not live), or an explicit *status* field?
-3. **Shop-type data + mapping** — is the target Now shoptype in the export, or only the Base shoptype? Either way, get the **Base-shoptype → Now-shoptype mapping** ("what is an L shop"). Maps to the existing Shop Type Mapping feature.
-4. **In-scope definition** — which Base shops are actually meant to migrate (all / active only / certain packages)? Sets the "% live" denominator.
-5. **One row per shop, or can a shop repeat?**
-6. Confirm the **creation-date** column, the **Reseller / country / URL / package** column names, and the **update cadence** (weekly?).
+Export columns (one row per shop):
 
-Easiest unblock: a **sample export file** answers most of these at a glance. Once answered, the tab is a ~1-session clone-and-adapt of the PayPal tab.
+```
+project  database  shopid  alias  domain  closedbymerchant  migrationstatus  finalmigration  prepshopcreated
+```
+
+- **Cadence: monthly.** **`shopid`** is the stable key for month-over-month diff. **Shoptype** lands in the *next* export → wire the Shop Type Mapping path now, light it up when the column appears.
+- `prepshopcreated` / `finalmigration` are **dates, nullable**. ⚠️ `prepshopcreated` is **nulled ~1 year after** a done-and-prep-deleted migration → do **not** infer "started" from it. **`migrationstatus` is the source of truth for funnel stage**; `finalmigration` only gives the go-live *date*.
+
+**`migrationstatus` values** (confirmed single-value enum 2026-06-24 — one value per shop, NOT a bitmask; each happens to be a power of 2):
+
+| Value | State | Funnel bucket |
+|---|---|---|
+| 0 | `NOT_PARTICIPATING` | **out of scope** (excluded from denominator) |
+| 1 | `INITIAL_ALLOW` | not started |
+| 2 | `INITIAL_IN_PROGRESS` | initial in progress |
+| 4 | `INITAL_PREPARED` | prepared (prep shop exists) |
+| 8 | `INITAL_FAILED` | ⚠️ failed |
+| 16 | `FINAL_ALLOW` | final in progress |
+| 32 | `FINAL_IN_PROGRESS` | final in progress |
+| 64 | `FINAL_SHOPTYPECHANGE_ALLOW` | final in progress |
+| 128 | `FINAL_DONE` | ✅ **live on Now** |
+| 256 | `FINAL_FAILED` | ⚠️ failed |
+| 512 | `ABORTED` | aborted |
+| 1024 | `FINAL_DONE_AND_PREP_DELETED` | ✅ **live on Now** (prep deleted) |
+
+**KPIs (reframed 2026-06-24 — flow/risk tracker, NOT a % completion bar):**
+
+The first instinct (clone PayPal's "% of cohort migrated → 100%" progress bar) is **wrong here**: there's no fixed cohort, no deadline, and the population grows monthly. A % of a drifting denominator measures composition, not progress, and hides the only thing a tracker should show — movement. So the dashboard tracks **stock + flow + risk**:
+
+- **Stock:** Live on Now = status ∈ {128, 1024} and not `closedbymerchant` (a shop the merchant later closed isn't "live on Now").
+- **Flow (the centerpiece):** `finalmigration` / `prepshopcreated` are dated → **one export contains the full go-live & start history**. Go-lives-per-month + starts-per-month chart; "Went live (latest month)"; **run-rate** = 3-mo avg go-lives with trend vs prior 3 mo.
+- **Risk / action:** **Stalled in Prep** = `INITAL_PREPARED` (4) bucketed by age (snapshot − `prepshopcreated`); 3+ months = actionable backlog. Plus failed (8/256), aborted (512), merchant-closed mid-flight.
+- **Composition strip** (no target): where in-scope shops currently sit, as a stacked bar — a snapshot, not a goal.
+- **Segmentation:** by `project` (Reseller-equivalent); % live *within* a project is legitimate (comparing projects to each other), unlike a global goal bar. Shoptype dimension dormant until the column arrives.
+
+**May-2026 validation:** 2,060 live · run-rate ~18/mo (rising 9→22 over 6 mo) · **806 of 914 prepared shops stalled ≥3 months**. The reframe surfaced the stall backlog the % bar had hidden.
+
+`NOT_PARTICIPATING` (0) is excluded from "in scope". `ABORTED` + `closedbymerchant` excluded from active-candidate rates.
+
+**Confirmed by Karsten (2026-06-24):** `migrationstatus` is **single-value** (one state per shop, not a bitmask) — the dashboard's `status === X` reading is correct.
+
+Now a ~1-session clone-and-adapt of the PayPal tab.
 
 ## Source
 

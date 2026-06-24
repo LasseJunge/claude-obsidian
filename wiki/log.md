@@ -19,6 +19,26 @@ Navigation: [[index]] | [[hot]] | [[overview]]
 
 Append-only. New entries go at the TOP. Never edit past entries.
 
+## [2026-06-24] save | OpenClaw Company Agent — Use Cases + Alternatives Exploration
+- Type: session
+- Location: wiki/meta/2026-06-24-openclaw-company-agent-exploration.md
+- From: evaluating a colleague's idea to run OpenClaw company-wide on Mattermost with Atlassian/Rovo access — use-case layers, two caveats (single-operator trust model, no native Atlassian connector), and an alternatives shortlist (Onyx/Falconer/Dust/Rovo/Glean) with a recommendation
+- Companion: [[Chat-Native Agent Tools — OpenClaw vs Alternatives]] (c-000055), [[Chat-Native AI Agents]]
+- Key insight: the chat surface is easy; permission-aware knowledge + safe execution is the hard part. For a company knowledge bot, Onyx (OSS, EU self-host, Atlassian, ACL inheritance) fits better than OpenClaw; Rovo is near-free for Jira/Confluence Q&A but Slack-only.
+
+## [2026-06-24] save | Base → Now Dashboard Build
+- Type: session
+- Location: wiki/meta/2026-06-24-base-to-now-dashboard-build.md
+- From: building the Base→Now migration tab in `.raw/Spreedly_Conversion.html` from Karsten's first monthly export
+- Key insight: the PayPal "% of cohort → 100%" progress bar is the WRONG frame for Base→Now (no fixed cohort, no deadline, growing population). Reframed to a **stock/flow/risk tracker** — and since `finalmigration`/`prepshopcreated` are dated, the full velocity history is derivable from one export. Surfaced the buried truth: **747 of 914 prepared shops stuck 12+ months, median 3.4 yr in prep**. "Closed by merchant" reframed as info-only (still pays), not churn → Live on Now 2,060 → 2,228. `migrationstatus` confirmed single-value enum. Also: cross-tab per-shop notes, dashboard widened to 1760px, AutoTranslate tab de-admin-gated.
+
+## [2026-06-24] ingest | Chat-native AI agents — Shopify "Under the River" + OpenClaw
+- Sources: `.raw/articles/under-the-river-2026-06-24.md`, `.raw/articles/openclaw-2026-06-24.md` (incl. related links: what-is-nix, docs.openclaw.ai home/mattermost/security/streaming)
+- Summaries: [[Under the River — Shopify Agent Platform]], [[OpenClaw — Self-Hosted Chat-to-Agent Gateway]]
+- Pages created: [[OpenClaw]], [[Shopify]], [[Peter Steinberger]], [[Mattermost]], [[Brain-Hands Agent Architecture]], [[Durable Agent Sessions]], [[Chat-Native AI Agents]], [[Aquifer Agent Platform]], [[Nix]], [[Single-Operator Trust Boundary]]
+- Pages updated: [[index]], [[hot]], [[Open Questions and Blockers]]
+- Key insight: OpenClaw is a strong chat-to-agent gateway but is explicitly **single-operator** and has **no native Atlassian/Rovo** connector — a direct conflict with the user's "company-wide Mattermost bot with Rovo/Atlassian" idea. Shopify's Aquifer (durable sessions, brain/hands split, multiplayer-by-design) is the bar for a real multi-user deployment.
+
 ## [2026-06-23] save | AutoTranslate export ticket, PayPal perf memo, and lint pass
 - Type: session
 - Location: wiki/meta/2026-06-23-at-ticket-paypal-perf-and-lint.md

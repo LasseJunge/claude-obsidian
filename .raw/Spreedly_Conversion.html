@@ -80,7 +80,7 @@ body.auth-locked .admin-bar,body.auth-locked .header,body.auth-locked .nav-bar,b
 .tab-lock{font-size:11px;background:var(--surface2);color:var(--text3);border-radius:4px;padding:2px 6px;margin-left:2px;}
 .page{display:none;}
 .page.active{display:block;}
-.main{max-width:1280px;margin:0 auto;padding:2rem;}
+.main{max-width:1760px;margin:0 auto;padding:2rem;}
 .sec-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:.85rem;}
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:1rem;}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.2rem;}
@@ -172,6 +172,8 @@ tbody td{padding:10px 14px;vertical-align:middle;}
 .badge.sw-base{background:#fefce8;color:#854d0e;border-color:#fde68a;}
 .badge.sw-now{background:#f0fdf4;color:#166534;border-color:#bbf7d0;}
 .cmt{font-size:11px;color:var(--text2);font-style:italic;margin-top:2px;}
+.note-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;border-radius:4px;line-height:0;display:inline-flex;transition:color .15s,background .15s;}
+.note-btn:hover{color:var(--ep-red);background:rgba(0,0,0,.05);}
 a.domain{font-size:11px;color:var(--st);text-decoration:none;}
 a.domain:hover{text-decoration:underline;}
 .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center;}
@@ -295,6 +297,8 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
     <button class="btn-ghost" id="btn-pp-import" style="display:none" onclick="triggerPayPalCSVUpload()"><i class="ti ti-upload"></i> <span>Import PayPal CSV</span></button>
     <button class="btn-ghost" id="btn-pp-gateways" style="display:none" onclick="openPPGatewayModal()"><i class="ti ti-brand-paypal"></i> <span>PayPal Gateways</span></button>
     <button class="btn-ghost danger" id="btn-pp-clear" style="display:none" onclick="openConfirmClearPP()"><i class="ti ti-trash"></i> <span>Clear PayPal Data</span></button>
+    <button class="btn-ghost" id="btn-bn-import" style="display:none" onclick="triggerBaseToNowCSVUpload()"><i class="ti ti-upload"></i> <span>Import Base→Now CSV</span></button>
+    <button class="btn-ghost danger" id="btn-bn-clear" style="display:none" onclick="openConfirmClearBN()"><i class="ti ti-trash"></i> <span>Clear Base→Now Data</span></button>
     <button class="btn-ghost" id="btn-at-import" style="display:none" onclick="atTriggerImport()"><i class="ti ti-language"></i> <span>Import AT CSV</span></button>
     <button class="btn-ghost danger" id="btn-at-clear" style="display:none" onclick="openConfirmClearAT()"><i class="ti ti-trash"></i> <span>Clear AT Data</span></button>
     <button class="btn-ghost" onclick="openDateModal()"><i class="ti ti-calendar-event"></i> <span>Date Settings</span></button>
@@ -344,7 +348,10 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
   <a class="nav-tab" onclick="showPage('paypal',this)">
     <i class="ti ti-brand-paypal"></i> PayPal Migration
   </a>
-  <a class="nav-tab admin-tab" style="display:none" onclick="showPage('autotranslate',this)">
+  <a class="nav-tab" onclick="showPage('basetonow',this)">
+    <i class="ti ti-arrow-big-right-lines"></i> Base → Now
+  </a>
+  <a class="nav-tab" onclick="showPage('autotranslate',this)">
     <i class="ti ti-language"></i> Autotranslate
   </a>
   <a class="nav-tab admin-tab" style="display:none" onclick="showPage('otherapps',this)">
@@ -444,6 +451,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
           <span class="chip" onclick="toggleFilter(this,'spreedly')"><span class="dot sp"></span> Spreedly</span>
           <span class="chip ot-chip" onclick="toggleFilter(this,'gone')" id="chip-gone" style="display:none"><span class="dot" style="background:var(--ot)"></span> Left Spreedly</span>
           <span class="chip sl-chip" onclick="toggleFilter(this,'sleeper')"><span class="dot sl"></span> Sleeper</span>
+          <span class="chip" onclick="toggleFilter(this,'noted')" id="chip-noted" style="display:none"><i class="ti ti-message-circle" style="font-size:11px"></i> Has note</span>
         </div>
       </div>
       <div class="sw-wrap">
@@ -477,6 +485,19 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
     <div class="modal-actions">
       <button class="btn-save" onclick="saveShowtypeMapping()"><i class="ti ti-check"></i> Save</button>
       <button class="btn-cancel" onclick="closeModal('shoptype-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shop note modal -->
+<div class="backdrop" id="note-modal">
+  <div class="modal">
+    <div class="modal-ttl"><i class="ti ti-message-circle"></i> Shop Note</div>
+    <p class="modal-hint">Add a short note for <strong id="note-shop-name">this shop</strong> — e.g. "Shop closed", "Migrated to Now", reason for leaving. Saved against the shop and shown in search results.</p>
+    <textarea id="note-text" rows="3" placeholder="Shop closed …" style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r-sm);resize:vertical;"></textarea>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveShopNote()"><i class="ti ti-check"></i> Save</button>
+      <button class="btn-cancel" onclick="closeModal('note-modal')">Cancel</button>
     </div>
   </div>
 </div>
@@ -675,6 +696,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
           <span class="chip" id="pp-chip-new" onclick="ppToggleFilter(this,'newest')"><span class="dot" style="background:var(--ok)"></span> Newest</span>
           <span class="chip" id="pp-chip-leg" onclick="ppToggleFilter(this,'legacy')"><span class="dot" style="background:var(--warn)"></span> Legacy</span>
           <span class="chip sl-chip" onclick="ppToggleFilter(this,'sleeper')"><span class="dot sl"></span> Sleeper</span>
+          <span class="chip" id="pp-chip-noted" onclick="ppToggleFilter(this,'noted')" style="display:none"><i class="ti ti-message-circle" style="font-size:11px"></i> Has note</span>
         </div>
       </div>
       <div class="sw-wrap">
@@ -694,6 +716,173 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 
 </div>
 </div>
+</div>
+
+<!-- PAGE: BASE → NOW -->
+<div class="page" id="page-basetonow">
+<div id="bn-no-data" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:2rem;">
+  <i class="ti ti-file-upload" style="font-size:48px;color:var(--border2);margin-bottom:16px"></i>
+  <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text2);margin-bottom:8px">No data loaded</h2>
+  <p style="font-size:13px;color:var(--text3);max-width:340px;margin-bottom:20px">Log in as Admin and import the monthly Base→Now migration CSV to get started.</p>
+  <button onclick="triggerBaseToNowCSVUpload()" style="background:var(--ep-red);color:#fff;border:none;border-radius:var(--r-sm);padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ti ti-upload"></i> Import Base→Now CSV</button>
+</div>
+<div id="bn-content" style="display:none">
+<div class="main">
+
+  <div id="bn-shoptype-notice" style="display:flex;align-items:center;gap:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:10px 16px;margin-bottom:1.5rem;">
+    <i class="ti ti-info-circle" style="font-size:15px;color:#d97706;flex-shrink:0;"></i>
+    <span style="font-size:13px;color:#92400e;font-weight:500;">Shop-type breakdown lights up once the <strong>shoptype</strong> column arrives in a future export (expected next month). All other metrics are live.</span>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom:1.75rem;">
+    <div class="kpi" style="border-color:#bbf7d0;background:#f0fdf4">
+      <div class="kpi-lbl" style="color:var(--ok)"><i class="ti ti-circle-check" style="font-size:12px"></i> Live on Now</div>
+      <div class="kpi-val" id="bn-k-live" style="color:var(--ok)">–</div>
+      <div class="kpi-sub">running total migrated</div>
+    </div>
+    <div class="kpi" style="border-color:#bbf7d0;background:#f0fdf4">
+      <div class="kpi-lbl" style="color:var(--ok)"><i class="ti ti-rocket" style="font-size:12px"></i> Went Live</div>
+      <div class="kpi-val" id="bn-k-recent" style="color:var(--ok)">–</div>
+      <div class="kpi-sub" id="bn-k-recent-sub">latest month</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl"><i class="ti ti-gauge" style="font-size:12px"></i> Run-rate</div>
+      <div class="kpi-val" id="bn-k-rate">–</div>
+      <div class="kpi-sub" id="bn-k-rate-sub">go-lives / month (3-mo avg)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl"><i class="ti ti-player-play" style="font-size:12px"></i> Started</div>
+      <div class="kpi-val" id="bn-k-started">–</div>
+      <div class="kpi-sub" id="bn-k-started-sub">prep created, latest month</div>
+    </div>
+    <div class="kpi" style="border-color:#fde68a;background:#fffbeb">
+      <div class="kpi-lbl" style="color:var(--warn)"><i class="ti ti-hourglass-high" style="font-size:12px"></i> Stalled in Prep</div>
+      <div class="kpi-val" id="bn-k-stall" style="color:var(--warn)">–</div>
+      <div class="kpi-sub" id="bn-k-stall-sub">prepared, not live</div>
+    </div>
+    <div class="kpi" style="border-color:var(--ep-red-bd);background:var(--ep-red-bg)">
+      <div class="kpi-lbl" style="color:var(--ep-red)"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Needs Attention</div>
+      <div class="kpi-val" id="bn-k-risk" style="color:var(--ep-red)">–</div>
+      <div class="kpi-sub" id="bn-k-risk-sub">failed · aborted · closed</div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Migration Velocity</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-chart-histogram" style="font-size:14px;color:var(--text2)"></i> Go-lives &amp; Starts per Month</div>
+      <div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3)">
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:var(--ok);display:inline-block"></span> Went live</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#6366f1;display:inline-block"></span> Started (prep)</span>
+      </div>
+    </div>
+    <div id="bn-timeline-body" style="padding:1.1rem 1.2rem;"></div>
+  </div>
+
+  <div class="sec-lbl">Pipeline Composition</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-layout-distribute-horizontal" style="font-size:14px;color:var(--text2)"></i> Where Tracked Shops Stand <span style="font-weight:400;color:var(--text3);font-size:11px">(no target — a snapshot, not a goal)</span></div>
+      <span class="bd-cnt" id="bn-comp-cnt"></span>
+    </div>
+    <div style="padding:1.1rem 1.2rem;">
+      <div id="bn-comp-bar" style="display:flex;height:24px;border-radius:6px;overflow:hidden;background:var(--surface2);"></div>
+      <div id="bn-comp-legend" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;"></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Stalled in Preparation</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-hourglass" style="font-size:14px;color:var(--warn)"></i> Prepared Shops by Time Since Prep Created</div>
+      <span class="bd-cnt" id="bn-stall-cnt"></span>
+    </div>
+    <div id="bn-stall-body" style="padding:.4rem 1.2rem;"></div>
+  </div>
+
+  <div class="sec-lbl">Changes Since Last Upload</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-arrows-exchange" style="font-size:14px;color:var(--text2)"></i> Monthly Migration Movements</div>
+      <span class="bd-cnt" id="bn-chg-cnt"></span>
+    </div>
+    <div id="bn-chg-body" style="padding:.9rem 1.2rem;"></div>
+  </div>
+
+  <div class="sec-lbl">Migration Funnel</div>
+  <div class="bd-card" style="margin-bottom:1.75rem;">
+    <div class="bd-hd">
+      <div class="bd-title"><i class="ti ti-chart-bar" style="font-size:14px;color:var(--text2)"></i> By Migration Status</div>
+      <span class="bd-cnt" id="bn-funnel-cnt"></span>
+    </div>
+    <div id="bn-funnel-body" style="padding:.4rem 1.2rem;"></div>
+  </div>
+
+  <div class="sec-lbl">Breakdown</div>
+  <div class="bd-grid" style="margin-bottom:1.75rem;">
+    <div class="bd-card">
+      <div class="bd-hd">
+        <div class="bd-title"><i class="ti ti-users" style="font-size:14px;color:var(--text2)"></i> By Project (% Live)</div>
+        <span class="bd-cnt" id="bn-project-cnt"></span>
+      </div>
+      <div class="bd-body" id="bn-project-bd"></div>
+    </div>
+    <div class="bd-card">
+      <div class="bd-hd">
+        <div class="bd-title"><i class="ti ti-progress-alert" style="font-size:14px;color:var(--warn)"></i> Not-Yet-Live Shops by Project</div>
+        <span class="bd-cnt" id="bn-pending-cnt"></span>
+      </div>
+      <div class="bd-body" id="bn-pending-bd"></div>
+    </div>
+  </div>
+
+  <div class="search-card">
+    <div class="search-hd">
+      <div class="search-top">
+        <div class="search-ttl">Shop Search</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="chip active" id="bn-chip-all" onclick="bnToggleFilter(this,'all')">All</span>
+          <span class="chip" id="bn-chip-live" onclick="bnToggleFilter(this,'live')"><span class="dot" style="background:var(--ok)"></span> Live</span>
+          <span class="chip" id="bn-chip-prog" onclick="bnToggleFilter(this,'prog')"><span class="dot" style="background:var(--warn)"></span> In Progress</span>
+          <span class="chip" id="bn-chip-failed" onclick="bnToggleFilter(this,'failed')" style="color:var(--ep-red);border-color:var(--ep-red-bd)"><span class="dot" style="background:var(--ep-red)"></span> Failed</span>
+          <span class="chip" id="bn-chip-closed" onclick="bnToggleFilter(this,'closed')"><span class="dot" style="background:var(--text3)"></span> Closed</span>
+          <span class="chip" id="bn-chip-aborted" onclick="bnToggleFilter(this,'aborted')"><span class="dot" style="background:#9ca3af"></span> Aborted</span>
+          <span class="chip" id="bn-chip-noted" onclick="bnToggleFilter(this,'noted')" style="display:none"><i class="ti ti-message-circle" style="font-size:11px"></i> Has note</span>
+        </div>
+      </div>
+      <div class="sw-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" class="s-input" id="bn-si" placeholder="Search alias, domain, project, status, shop id …" oninput="bnOnSearch()">
+      </div>
+    </div>
+    <div class="search-info" id="bn-search-info"></div>
+    <div id="bn-search-body">
+      <div class="search-empty">
+        <i class="ti ti-search"></i>
+        <p>Enter a search term to find shops.</p>
+        <p style="margin-top:4px;font-size:12px;color:var(--text3)">Minimum 2 characters · 50 results per page · use the chips to browse without a search term</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- Confirm Clear Base→Now Data Modal -->
+<div class="backdrop" id="confirm-bn-modal">
+  <div class="confirm-box">
+    <div class="modal-ttl"><i class="ti ti-alert-triangle"></i> Clear Base→Now data?</div>
+    <div class="confirm-body">
+      This will permanently delete <strong>all Base→Now migration data</strong> (current + previous snapshot).<br><br>
+      All other dashboard data will <strong>not</strong> be affected.<br><br>
+      <strong>This cannot be undone.</strong> Are you sure?
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="clearBaseToNowData()" style="background:#dc2626;"><i class="ti ti-trash"></i> Yes, clear Base→Now data</button>
+      <button class="btn-cancel" onclick="closeModal('confirm-bn-modal')">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- PayPal Gateway Modal -->
@@ -967,7 +1156,7 @@ thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(-
 
 <script>
 const ADMIN_PW = 'epAdmin-2026!K9vT4sR2';
-let tsData = {spreedlyUpload:'', atUpload:'', ppUpload:'', lastModified:''};
+let tsData = {spreedlyUpload:'', atUpload:'', ppUpload:'', bnUpload:'', lastModified:''};
 function fmtTS(iso){ if(!iso)return'–'; const d=new Date(iso); return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 function renderTimestamps(){ document.getElementById('ts-modified').textContent=fmtTS(tsData.lastModified); }
 function updateUploadStrip(tabName){
@@ -975,9 +1164,10 @@ function updateUploadStrip(tabName){
   const val=document.getElementById('ts-upload');
   if(tabName==='autotranslate'){ lbl.textContent='AutoTranslate data last uploaded:'; val.textContent=fmtTS(tsData.atUpload); }
   else if(tabName==='paypal'){ lbl.textContent='PayPal data last uploaded:'; val.textContent=fmtTS(tsData.ppUpload); }
+  else if(tabName==='basetonow'){ lbl.textContent='Base→Now data last uploaded:'; val.textContent=fmtTS(tsData.bnUpload); }
   else { lbl.textContent='Shop data last uploaded:'; val.textContent=fmtTS(tsData.spreedlyUpload); }
 }
-async function dbStampUpload(type){ if(type==='at') tsData.atUpload=new Date().toISOString(); else if(type==='pp') tsData.ppUpload=new Date().toISOString(); else tsData.spreedlyUpload=new Date().toISOString(); await sb.from('mappings').upsert({id:'timestamps',data:tsData}); }
+async function dbStampUpload(type){ if(type==='at') tsData.atUpload=new Date().toISOString(); else if(type==='pp') tsData.ppUpload=new Date().toISOString(); else if(type==='bn') tsData.bnUpload=new Date().toISOString(); else tsData.spreedlyUpload=new Date().toISOString(); await sb.from('mappings').upsert({id:'timestamps',data:tsData}); }
 async function dbStampModified(){ tsData.lastModified=new Date().toISOString(); await sb.from('mappings').upsert({id:'timestamps',data:tsData}); renderTimestamps(); }
 const TODAY = new Date();
 const SLEEPER_YEAR = 2026;
@@ -1072,6 +1262,7 @@ let shops = [];
 let baseline = null;
 let partnerBaseline = {};
 let baselineShops = [];
+let shopNotes = {};   // { [shopKey]: "note text" } — admin-editable per-shop notes (e.g. "shop closed")
 
 // ── Supabase helpers ──────────────────────────────────────────
 async function dbLoadAll(){
@@ -1102,11 +1293,18 @@ async function dbLoadAll(){
     if(ppsb) ppShutBaseline = ppsb.data;
     const tsd = maps.find(m=>m.id==='timestamps');
     if(tsd) tsData = {...tsData,...(tsd.data||{})};
+    const sn = maps.find(m=>m.id==='shop_notes');
+    if(sn) shopNotes = sn.data||{};
   }
   const ppCsvText = await dbLoadPayPalCSV();
   if(ppCsvText){ const parsed=parseCSVAuto(ppCsvText, false); if(parsed.length) ppShops=parsed; }
   const ppPrevText = await dbLoadPayPalPrevCSV();
   if(ppPrevText){ const prev=parseCSVAuto(ppPrevText, false); if(prev.length) ppPrevShops=prev; }
+
+  const bnCsvText = await dbLoadBaseToNowCSV();
+  if(bnCsvText){ const parsed=bnParse(bnCsvText); if(parsed.length) bnShops=parsed; }
+  const bnPrevText = await dbLoadBaseToNowPrevCSV();
+  if(bnPrevText){ const prev=bnParse(bnPrevText); if(prev.length) bnPrevShops=prev; }
 
   // shops – load from Storage
   const csvText = await dbLoadCSV();
@@ -1132,6 +1330,13 @@ async function dbSaveMapping(){
 async function dbSaveShowtypeMapping(){
   if(!currentUser || !isAdmin) return;
   await sb.from('mappings').upsert({id:'shoptype', data:showtypeMapping});
+}
+async function dbSaveShopNotes(){
+  if(!currentUser || !isAdmin) return;
+  if(Object.keys(shopNotes).length)
+    await sb.from('mappings').upsert({id:'shop_notes', data:shopNotes});
+  else
+    await sb.from('mappings').delete().eq('id','shop_notes');
 }
 async function dbSavePartnerBaseline(){
   if(!currentUser || !isAdmin) return;
@@ -1247,6 +1452,7 @@ function showPage(name,el){
   if(name==='churn') initChurnCharts();
   if(name==='autotranslate') atRefresh();
   if(name==='paypal') ppRefresh();
+  if(name==='basetonow') bnRefresh();
   updateUploadStrip(name);
   if(isAdmin) syncAdminButtons();
 }
@@ -1376,18 +1582,16 @@ function toggleFilter(el, val){
 
 function matchesFilter(s){
   if(activeFilters.has('all')) return true;
-  if(activeFilters.has('gone') && s._gone) return true;
-  if(activeFilters.has('gone') && activeFilters.size===1) return s._gone;
-  // If only chip-based filters are active, apply them strictly
-  const strictFilters=activeFilters.size>0 && !activeFilters.has('all');
-  if(strictFilters){
-    let match=false;
-    if(activeFilters.has('spreedly') && s.provider==='spreedly') match=true;
-    if(activeFilters.has('sleeper')  && isSlpr(s))               match=true;
-    if(activeFilters.has('gone')     && s._gone)                 match=true;
-    return match;
-  }
-  return true;
+  // "Has note" is a hard requirement (AND), not one of the OR'd category chips.
+  if(activeFilters.has('noted') && !shopNotes[shopKey(s)]) return false;
+  // The category chips (spreedly / sleeper / gone) combine with OR.
+  const cats=[...activeFilters].filter(f=>f!=='noted');
+  if(cats.length===0) return true; // only "Has note" active → any noted shop passes
+  let match=false;
+  if(activeFilters.has('spreedly') && s.provider==='spreedly') match=true;
+  if(activeFilters.has('sleeper')  && isSlpr(s))               match=true;
+  if(activeFilters.has('gone')     && s._gone)                 match=true;
+  return match;
 }
 
 function shopKey(s){
@@ -1416,8 +1620,12 @@ function doSearch(){
   // Show/hide Gone chip depending on whether we have a baseline snapshot
   const goneChip=document.getElementById('chip-gone');
   if(goneChip) goneChip.style.display=baselineShops.length?'':'none';
+  const notedChip=document.getElementById('chip-noted');
+  if(notedChip) notedChip.style.display=Object.keys(shopNotes).length?'':'none';
 
-  if(q.length<2){
+  // The "Has note" filter works with no search term — list every noted shop.
+  const notedActive=activeFilters.has('noted');
+  if(q.length<2 && !notedActive){
     document.getElementById('search-info').style.display='none';
     document.getElementById('search-body').innerHTML=`
       <div class="search-empty"><i class="ti ti-search"></i>
@@ -1502,8 +1710,11 @@ function doSearch(){
       ?`<a href="https://${s.domain}" target="_blank" class="domain">${s.domain}</a>`
       :`<span style="color:var(--text3)">–</span>`;
     const atd='';
+    const note=shopNotes[shopKey(s)]||'';
+    const noteHtml=note?`<div class="cmt"><i class="ti ti-message-circle" style="font-size:10px"></i> ${escHtml(note)}</div>`:'';
+    const noteBtn=isAdmin?`<button class="note-btn" title="${note?'Edit note':'Add note'}" data-key="${escAttr(shopKey(s))}" onclick="editShopNote(this)"><i class="ti ti-${note?'edit':'message-plus'}" style="font-size:12px"></i></button>`:'';
     return`<tr class="${sl?'is-sleeper':gone?'is-gone':''}">
-      <td><div style="font-weight:500">${s.name||s.alias}${slB}${goneB}</div>${s.comment?`<div class="cmt"><i class="ti ti-message-circle" style="font-size:10px"></i> ${s.comment}</div>`:''}</td>
+      <td><div style="font-weight:500;display:flex;align-items:center;gap:6px">${s.name||s.alias}${slB}${goneB}${noteBtn}</div>${noteHtml}</td>
       <td>${s.partner||'–'}</td>
       <td>${domCell}</td>
       <td>${swBadge}</td>
@@ -1561,6 +1772,8 @@ function syncAdminButtons(){
   document.getElementById('btn-pp-import').style.display=name==='paypal'?'':'none';
   document.getElementById('btn-pp-gateways').style.display=name==='paypal'?'':'none';
   document.getElementById('btn-pp-clear').style.display=name==='paypal'?'':'none';
+  document.getElementById('btn-bn-import').style.display=name==='basetonow'?'':'none';
+  document.getElementById('btn-bn-clear').style.display=name==='basetonow'?'':'none';
 }
 function checkLogin(){
   if(document.getElementById('pw').value===ADMIN_PW){
@@ -1581,7 +1794,7 @@ function exitAdminMode(silent=false){
   document.getElementById('admin-bar').classList.remove('visible');
   document.getElementById('admin-btn').innerHTML='<i class="ti ti-lock"></i> Admin';
   document.querySelectorAll('.admin-tab').forEach(t=>t.style.display='none');
-  ['btn-migration-import','btn-at-import','btn-at-clear','btn-pp-import','btn-pp-gateways','btn-pp-clear'].forEach(id=>{
+  ['btn-migration-import','btn-at-import','btn-at-clear','btn-pp-import','btn-pp-gateways','btn-pp-clear','btn-bn-import','btn-bn-clear'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   const activePage=document.querySelector('.page.active');
@@ -1738,8 +1951,32 @@ async function resetBaseline(){
 
 
 
+// ── Shop notes ────────────────────────────────────────────────
+function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escAttr(s){ return escHtml(s); }
+let noteEditKey=null;
+function editShopNote(btn){
+  if(!isAdmin){ toast('Admin mode required'); return; }
+  noteEditKey=btn.getAttribute('data-key');
+  document.getElementById('note-shop-name').textContent=noteEditKey||'this shop';
+  document.getElementById('note-text').value=shopNotes[noteEditKey]||'';
+  document.getElementById('note-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('note-text').focus(),80);
+}
+async function saveShopNote(){
+  if(!isAdmin||noteEditKey==null) return;
+  const val=document.getElementById('note-text').value.trim();
+  if(val) shopNotes[noteEditKey]=val; else delete shopNotes[noteEditKey];
+  await dbSaveShopNotes(); await dbStampModified();
+  closeModal('note-modal'); noteEditKey=null;
+  doSearch();
+  if(document.getElementById('pp-si') && document.getElementById('pp-si').value.trim().length>=2) ppDoSearch();
+  if(bnShops.length && document.getElementById('page-basetonow').classList.contains('active')) bnDoSearch();
+  toast(val?'Note saved':'Note removed');
+}
+
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-['date-modal','mapping-modal','shoptype-modal','confirm-modal','confirm-at-modal','confirm-pp-modal','pp-gateway-modal'].forEach(id=>{
+['date-modal','mapping-modal','shoptype-modal','note-modal','confirm-modal','confirm-at-modal','confirm-pp-modal','confirm-bn-modal','pp-gateway-modal'].forEach(id=>{
   const el=document.getElementById(id);
   if(el)el.addEventListener('click',function(e){ if(e.target===this)this.classList.remove('open'); });
 });
@@ -3148,18 +3385,26 @@ function ppToggleFilter(el,val){
 
 function ppMatchesFilter(s){
   if(ppActiveFilters.has('all')) return true;
+  // "Has note" is a hard requirement (AND), not one of the OR'd category chips.
+  if(ppActiveFilters.has('noted') && !shopNotes[shopKey(s)]) return false;
+  const cats=[...ppActiveFilters].filter(f=>f!=='noted');
+  if(cats.length===0) return true; // only "Has note" active → any noted shop passes
   const t=ppGetGatewayType(s);
-  if(ppActiveFilters.has('shutdown')&&t==='shutdown') return true;
-  if(ppActiveFilters.has('newest')  &&t==='newest')   return true;
-  if(ppActiveFilters.has('legacy')  &&t==='legacy')   return true;
-  if(ppActiveFilters.has('sleeper') &&isSlpr(s))       return true;
-  return false;
+  let match=false;
+  if(ppActiveFilters.has('shutdown')&&t==='shutdown') match=true;
+  if(ppActiveFilters.has('newest')  &&t==='newest')   match=true;
+  if(ppActiveFilters.has('legacy')  &&t==='legacy')   match=true;
+  if(ppActiveFilters.has('sleeper') &&isSlpr(s))       match=true;
+  return match;
 }
 
 function ppDoSearch(){
   const q=document.getElementById('pp-si').value.trim().toLowerCase();
   const ppShops=ppDetectShops();
-  if(q.length<2){
+  const ppNotedChip=document.getElementById('pp-chip-noted');
+  if(ppNotedChip) ppNotedChip.style.display=Object.keys(shopNotes).length?'':'none';
+  const ppNotedActive=ppActiveFilters.has('noted');
+  if(q.length<2 && !ppNotedActive){
     document.getElementById('pp-search-info').style.display='none';
     document.getElementById('pp-search-body').innerHTML=`<div class="search-empty"><i class="ti ti-search"></i><p>Enter a search term to find shops.</p><p style="margin-top:4px;font-size:12px;color:var(--text3)">Minimum 2 characters · 50 results per page</p></div>`;
     return;
@@ -3194,8 +3439,11 @@ function ppDoSearch(){
     const sl=isSlpr(s), t=ppGetGatewayType(s)||'unknown';
     const slB=sl?` <span class="badge sl"><i class="ti ti-moon" style="font-size:10px"></i> Sleeper</span>`:'';
     const dom=s.domain?`<a href="https://${s.domain}" target="_blank" class="domain">${s.domain}</a>`:`<span style="color:var(--text3)">–</span>`;
+    const note=shopNotes[shopKey(s)]||'';
+    const noteHtml=note?`<div class="cmt"><i class="ti ti-message-circle" style="font-size:10px"></i> ${escHtml(note)}</div>`:'';
+    const noteBtn=isAdmin?`<button class="note-btn" title="${note?'Edit note':'Add note'}" data-key="${escAttr(shopKey(s))}" onclick="editShopNote(this)"><i class="ti ti-${note?'edit':'message-plus'}" style="font-size:12px"></i></button>`:'';
     return`<tr class="${sl?'is-sleeper':''}">
-      <td><div style="font-weight:500">${s.name||s.alias}${slB}</div></td>
+      <td><div style="font-weight:500;display:flex;align-items:center;gap:6px">${s.name||s.alias}${slB}${noteBtn}</div>${noteHtml}</td>
       <td>${s.partner||'–'}</td>
       <td>${dom}</td>
       <td style="font-size:12px;color:var(--text2)">${s.shoptype||'–'}${s.software&&s.software!=='Unknown'?` <span style="font-size:10px;color:var(--text3)">(${s.software})</span>`:''}</td>
@@ -3237,6 +3485,486 @@ async function ppSaveGateways(){
   ppRefresh();
   toast('PayPal gateway config saved');
 }
+
+// ── Base → Now migration tracker ──────────────────────────────
+let bnShops = [];
+let bnPrevShops = [];
+let bnActiveFilters = new Set(['all']);
+let bnCurrentPage = 1, bnLastResults = [], bnSortCol = null, bnSortDir = 'asc', bnSearchTimer = null;
+const BN_PAGE_SIZE = 50;
+
+// migrationstatus enum (Karsten, 2026-06-24) — discrete value per shop, not a bitmask.
+const BN_STATE={0:'NOT_PARTICIPATING',1:'INITIAL_ALLOW',2:'INITIAL_IN_PROGRESS',4:'INITAL_PREPARED',8:'INITAL_FAILED',16:'FINAL_ALLOW',32:'FINAL_IN_PROGRESS',64:'FINAL_SHOPTYPECHANGE_ALLOW',128:'FINAL_DONE',256:'FINAL_FAILED',512:'ABORTED',1024:'FINAL_DONE_AND_PREP_DELETED'};
+// Funnel bucket per status. 'live' = migrated; status is the source of truth (the go-live date can be NULL even when done).
+function bnBucket(st){
+  if(st===0) return 'notparticipating';
+  if(st===1) return 'notstarted';
+  if(st===2) return 'initial';
+  if(st===4) return 'prepared';
+  if(st===8||st===256) return 'failed';
+  if(st===16||st===32||st===64) return 'final';
+  if(st===128||st===1024) return 'live';
+  if(st===512) return 'aborted';
+  return 'unknown';
+}
+const BN_BUCKET_LABEL={live:'Live on Now',final:'Final migration in progress',prepared:'Prepared',initial:'Initial in progress',notstarted:'Not started',failed:'Failed',aborted:'Aborted',notparticipating:'Not participating',unknown:'Unknown'};
+const BN_BUCKET_COLOR={live:'var(--ok)',final:'#0ea5e9',prepared:'#6366f1',initial:'var(--warn)',notstarted:'var(--text3)',failed:'var(--ep-red)',aborted:'#9ca3af',notparticipating:'#d1d5db',unknown:'var(--text3)'};
+// Funnel display order (most → least advanced).
+const BN_BUCKET_ORDER=['live','final','prepared','initial','notstarted','failed','aborted','notparticipating','unknown'];
+
+// Dates are DD/MM/YYYY HH:MM (European); "NULL"/empty → null.
+function bnParseDate(v){
+  if(!v||/^null$/i.test(v.trim())) return null;
+  const m=v.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+  if(!m) return null;
+  return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0));
+}
+function bnFmtDate(v){ const d=bnParseDate(v); return d?fmtDo(d):'–'; }
+
+// Parser that retains the migration-specific columns parseCSV drops.
+function bnParse(text){
+  const lines=text.trim().split('\n');
+  if(lines.length<2) return [];
+  const firstLine=lines[0];
+  const commas=(firstLine.match(/,/g)||[]).length, semis=(firstLine.match(/;/g)||[]).length, tabs=(firstLine.match(/\t/g)||[]).length;
+  let delim=','; if(semis>commas&&semis>tabs)delim=';'; else if(tabs>commas&&tabs>semis)delim='\t';
+  const headers=splitCSVLine(firstLine,delim).map(h=>h.trim().toLowerCase());
+  const out=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const vals=splitCSVLine(lines[i],delim);
+    const row={}; headers.forEach((h,idx)=>row[h]=(vals[idx]||'').trim());
+    const st=parseInt(row['migrationstatus'],10);
+    // Strip the legacy "DE_EPAGES_" prefix (dropped in future exports) so e.g. DE_EPAGES_STRATO → STRATO.
+    const proj=(row['project']||'').replace(/^DE_EPAGES_/i,'');
+    const shop={
+      project:  proj||'(no project)',
+      database: row['database']||'',
+      shopid:   row['shopid']||'',
+      alias:    row['alias']||'',
+      name:     row['alias']||row['domain']||row['shopid']||'',
+      domain:   /^null$/i.test(row['domain']||'')?'':(row['domain']||''),
+      closed:   row['closedbymerchant']==='1',
+      status:   Number.isFinite(st)?st:-1,
+      finalmigration:   row['finalmigration']||'',
+      prepshopcreated:  row['prepshopcreated']||'',
+      shoptype: row['shoptype']||'',           // not present yet; lights up when the column arrives
+      lastlogin:0,
+    };
+    shop.bucket=bnBucket(shop.status);
+    shop.software=resolveShoptype(shop.shoptype||'');
+    out.push(shop);
+  }
+  return out;
+}
+
+async function dbSaveBaseToNowCSV(rawText){
+  if(!currentUser||!isAdmin) return;
+  const blob=new Blob([rawText],{type:'text/csv'});
+  const {error}=await sb.storage.from('csv-imports').upload('baseToNow.csv',blob,{upsert:true});
+  if(error){console.error('dbSaveBaseToNowCSV:',error);toast('Error saving CSV: '+error.message);}
+}
+async function dbLoadBaseToNowCSV(){
+  if(!currentUser) return null;
+  const {data,error}=await sb.storage.from('csv-imports').download('baseToNow.csv');
+  if(error) return null;
+  return await data.text();
+}
+async function dbSaveBaseToNowPrevCSV(rawText){
+  if(!currentUser||!isAdmin) return;
+  const blob=new Blob([rawText],{type:'text/csv'});
+  await sb.storage.from('csv-imports').upload('baseToNow_prev.csv',blob,{upsert:true});
+}
+async function dbLoadBaseToNowPrevCSV(){
+  if(!currentUser) return null;
+  const {data,error}=await sb.storage.from('csv-imports').download('baseToNow_prev.csv');
+  if(error) return null;
+  return await data.text();
+}
+async function dbClearBaseToNowData(){
+  if(!currentUser||!isAdmin) return;
+  await sb.storage.from('csv-imports').remove(['baseToNow.csv','baseToNow_prev.csv']);
+}
+
+function triggerBaseToNowCSVUpload(){
+  if(!isAdmin){toast('Admin mode required');return;}
+  const input=document.createElement('input');
+  input.type='file';input.accept='.csv';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async ev=>{
+      const rawText=ev.target.result;
+      const parsed=bnParse(rawText);
+      if(!parsed.length){alert('No valid data found in file. Please check the CSV format.');return;}
+      // Preserve the current snapshot as "previous" before overwriting, so we can diff month-over-month.
+      const oldCsv=bnShops.length?await dbLoadBaseToNowCSV():null;
+      if(oldCsv){ await dbSaveBaseToNowPrevCSV(oldCsv); bnPrevShops=bnParse(oldCsv); }
+      else { bnPrevShops=[]; await dbSaveBaseToNowPrevCSV(''); }
+      bnShops=parsed;
+      await dbSaveBaseToNowCSV(rawText);
+      await dbStampUpload('bn'); await dbStampModified();
+      updateUploadStrip('basetonow');
+      bnRefresh();
+      toast(fmt(parsed.length)+' Base→Now shops imported');
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function openConfirmClearBN(){ document.getElementById('confirm-bn-modal').classList.add('open'); }
+async function clearBaseToNowData(){
+  bnShops=[]; bnPrevShops=[];
+  await dbClearBaseToNowData();
+  await dbStampModified();
+  closeModal('confirm-bn-modal');
+  bnRefresh();
+  toast('Base→Now data cleared');
+}
+
+function bnInScope(s){ return s.bucket!=='notparticipating'; }
+// Active candidates for per-project rate comparison: drop not-participating and aborted.
+// Merchant-closed shops are kept — they still pay and may reopen, so they remain migration candidates.
+function bnActiveScope(s){ return bnInScope(s) && s.bucket!=='aborted'; }
+const bnMonthKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+const bnMonthLabel=k=>{ const [y,m]=k.split('-'); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+y.slice(2); };
+// Add `n` months to a YYYY-MM key.
+function bnAddMonth(k,n){ const [y,m]=k.split('-').map(Number); const d=new Date(y,m-1+n,1); return bnMonthKey(d); }
+// "As of" date = newest event in the data (snapshot date proxy), so stall age + recency
+// don't break if the export is older than today's clock.
+function bnAsOf(){
+  let mx=0;
+  bnShops.forEach(s=>{ [bnParseDate(s.finalmigration),bnParseDate(s.prepshopcreated)].forEach(d=>{ if(d&&d.getTime()>mx)mx=d.getTime(); }); });
+  return mx?new Date(mx):TODAY;
+}
+
+function bnRefresh(){
+  if(!bnShops.length){
+    document.getElementById('bn-no-data').style.display='flex';
+    document.getElementById('bn-content').style.display='none';
+    return;
+  }
+  document.getElementById('bn-no-data').style.display='none';
+  document.getElementById('bn-content').style.display='block';
+
+  const hasShoptype=bnShops.some(s=>s.shoptype);
+  document.getElementById('bn-shoptype-notice').style.display=hasShoptype?'none':'flex';
+
+  const asOf=bnAsOf();
+  // Stock: live = migrated to Now. Merchant-closed shops still count — they're paying Now customers.
+  const liveNow=bnShops.filter(s=>s.bucket==='live');
+  // Flow: go-live / start events bucketed by month from the dated columns (whole history in one export).
+  const migByMonth={}, startByMonth={};
+  bnShops.forEach(s=>{
+    const fd=bnParseDate(s.finalmigration); if(fd) migByMonth[bnMonthKey(fd)]=(migByMonth[bnMonthKey(fd)]||0)+1;
+    const pd=bnParseDate(s.prepshopcreated); if(pd) startByMonth[bnMonthKey(pd)]=(startByMonth[bnMonthKey(pd)]||0)+1;
+  });
+  const asOfKey=bnMonthKey(asOf);
+  const recentMig=migByMonth[asOfKey]||0, recentStart=startByMonth[asOfKey]||0;
+  // 3-month run-rate ending at the snapshot month (counting zero months).
+  const last3=[0,1,2].map(i=>migByMonth[bnAddMonth(asOfKey,-i)]||0);
+  const prev3=[3,4,5].map(i=>migByMonth[bnAddMonth(asOfKey,-i)]||0);
+  const rate=Math.round(last3.reduce((a,b)=>a+b,0)/3);
+  const prevRate=prev3.reduce((a,b)=>a+b,0)/3;
+  const trend=prevRate>0?Math.round((rate-prevRate)/prevRate*100):0;
+
+  // Risk groups.
+  const prepared=bnShops.filter(s=>s.bucket==='prepared');
+  const stalled3=prepared.filter(s=>{ const d=bnParseDate(s.prepshopcreated); return d && (asOf-d)/2629800000>=3; }); // ≥3 months
+  const failed=bnShops.filter(bnInScope).filter(s=>s.bucket==='failed');
+  const aborted=bnShops.filter(s=>s.bucket==='aborted');
+  // Needs Attention = migration problems only (failed + aborted). Merchant-closed shops still pay
+  // and may just be temporarily closed (e.g. on vacation), so they are NOT flagged here.
+  const risk=bnShops.filter(s=>bnInScope(s) && (s.bucket==='failed'||s.bucket==='aborted'));
+
+  document.getElementById('bn-k-live').textContent=fmt(liveNow.length);
+  document.getElementById('bn-k-recent').textContent=fmt(recentMig);
+  document.getElementById('bn-k-recent-sub').textContent='in '+bnMonthLabel(asOfKey);
+  document.getElementById('bn-k-rate').textContent=fmt(rate);
+  document.getElementById('bn-k-rate-sub').innerHTML='go-lives / month (3-mo avg)'+(prevRate>0?` · <span style="color:${trend>=0?'var(--ok)':'var(--ep-red)'}">${trend>=0?'▲':'▼'} ${Math.abs(trend)}%</span>`:'');
+  document.getElementById('bn-k-started').textContent=fmt(recentStart);
+  document.getElementById('bn-k-started-sub').textContent='prep created in '+bnMonthLabel(asOfKey);
+  document.getElementById('bn-k-stall').textContent=fmt(prepared.length);
+  document.getElementById('bn-k-stall-sub').innerHTML=fmt(stalled3.length)+' stuck ≥3 months';
+  document.getElementById('bn-k-risk').textContent=fmt(risk.length);
+  document.getElementById('bn-k-risk-sub').textContent=fmt(failed.length)+' failed · '+fmt(aborted.length)+' aborted';
+
+  bnRenderTimeline(migByMonth,startByMonth,asOfKey);
+  bnRenderComposition();
+  bnRenderStall(asOf);
+  bnRenderChanges();
+  bnRenderFunnel();
+  bnRenderProjectBreakdown();
+  bnDoSearch();
+}
+
+// Grouped monthly bar chart (go-lives vs starts) from June 2025 to the snapshot month.
+const BN_TIMELINE_START='2025-06';
+function bnRenderTimeline(migByMonth,startByMonth,asOfKey){
+  const body=document.getElementById('bn-timeline-body');
+  let k=BN_TIMELINE_START>asOfKey?asOfKey:BN_TIMELINE_START;
+  const keys=[]; while(k<=asOfKey){ keys.push(k); k=bnAddMonth(k,1); }
+  const max=Math.max(1,...keys.map(k=>Math.max(migByMonth[k]||0,startByMonth[k]||0)));
+  const H=170;
+  const barH=v=>Math.max(v>0?2:0,Math.round(v/max*H)); // keep a 2px sliver visible for small non-zero months
+  const cols=keys.map(k=>{
+    const mv=migByMonth[k]||0, sv=startByMonth[k]||0;
+    return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;">
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:5px;height:${H}px;width:100%;">
+        <div title="${bnMonthLabel(k)}: ${fmt(mv)} went live" style="flex:1;max-width:34px;height:${barH(mv)}px;background:var(--ok);border-radius:3px 3px 0 0;"></div>
+        <div title="${bnMonthLabel(k)}: ${fmt(sv)} started" style="flex:1;max-width:34px;height:${barH(sv)}px;background:#6366f1;border-radius:3px 3px 0 0;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:7px;white-space:nowrap;">${bnMonthLabel(k)}</div>
+    </div>`;
+  }).join('');
+  const grid=[1,0.75,0.5,0.25].map(f=>`<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:9px;color:var(--text3);width:24px;text-align:right;flex-shrink:0;">${Math.round(max*f)}</span><div style="flex:1;border-top:1px dashed var(--border);"></div></div>`).join('');
+  body.innerHTML=`
+    <div style="position:relative;">
+      <div style="position:absolute;left:0;right:0;top:0;height:${H}px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;">${grid}</div>
+      <div style="position:relative;display:flex;align-items:flex-end;gap:10px;padding-left:32px;border-bottom:1.5px solid var(--border2);">${cols}</div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:10px;">Reconstructed from <code>finalmigration</code> &amp; <code>prepshopcreated</code> dates · from ${bnMonthLabel(BN_TIMELINE_START)} · peak ${fmt(max)}/mo</div>`;
+}
+
+// No-target stacked composition strip of where in-scope shops currently sit.
+function bnRenderComposition(){
+  const inScope=bnShops.filter(bnInScope);
+  const order=['live','final','prepared','initial','notstarted','failed','aborted'];
+  const counts={}; inScope.forEach(s=>{ counts[s.bucket]=(counts[s.bucket]||0)+1; });
+  const total=inScope.length;
+  document.getElementById('bn-comp-cnt').textContent=fmt(total)+' tracked';
+  const present=order.filter(b=>counts[b]);
+  document.getElementById('bn-comp-bar').innerHTML=present.map(b=>{
+    const p=(counts[b]/total*100);
+    return`<div title="${BN_BUCKET_LABEL[b]}: ${fmt(counts[b])} (${Math.round(p)}%)" style="width:${p}%;background:${BN_BUCKET_COLOR[b]};"></div>`;
+  }).join('');
+  document.getElementById('bn-comp-legend').innerHTML=present.map(b=>
+    `<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:${BN_BUCKET_COLOR[b]};display:inline-block"></span>${BN_BUCKET_LABEL[b]} <strong>${fmt(counts[b])}</strong> <span style="color:var(--text3)">${Math.round(counts[b]/total*100)}%</span></span>`
+  ).join('');
+}
+
+// Prepared-but-not-live shops bucketed by how long they've been stuck.
+function bnRenderStall(asOf){
+  const body=document.getElementById('bn-stall-body');
+  const cnt=document.getElementById('bn-stall-cnt');
+  const prepared=bnShops.filter(s=>s.bucket==='prepared');
+  cnt.textContent=fmt(prepared.length)+' prepared';
+  if(!prepared.length){ body.innerHTML='<div style="padding:1rem 0;color:var(--text3);font-size:13px;text-align:center;">No shops stuck in preparation.</div>'; return; }
+  const bands=[{lbl:'< 1 month',min:0,max:1,col:'var(--ok)'},{lbl:'1–3 months',min:1,max:3,col:'#6366f1'},{lbl:'3–6 months',min:3,max:6,col:'var(--warn)'},{lbl:'6–12 months',min:6,max:12,col:'#f97316'},{lbl:'12+ months',min:12,max:1e9,col:'var(--ep-red)'},{lbl:'no prep date',min:-1,max:-1,col:'var(--text3)'}];
+  const noDateIdx=bands.length-1;
+  const counts=bands.map(()=>0);
+  prepared.forEach(s=>{
+    const d=bnParseDate(s.prepshopcreated);
+    if(!d){ counts[noDateIdx]++; return; }
+    const months=(asOf-d)/2629800000;
+    const i=bands.findIndex(b=>b.min>=0&&months>=b.min&&months<b.max);
+    counts[i>=0?i:noDateIdx]++;
+  });
+  // Median + 90th-percentile age headline — a crisper "how bad" than reading the bands.
+  const ages=prepared.map(s=>bnParseDate(s.prepshopcreated)).filter(Boolean).map(d=>(asOf-d)/2629800000).sort((a,b)=>a-b);
+  const pctl=p=>ages.length?ages[Math.min(ages.length-1,Math.floor(p/100*ages.length))]:0;
+  const fmtAge=mo=>mo>=12?(mo/12).toFixed(1)+' yr':Math.round(mo)+' mo';
+  const headline=ages.length?`<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:.9rem;padding-bottom:.7rem;border-bottom:1px solid var(--border);">
+      <div><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:22px;color:var(--ep-red)">${fmtAge(pctl(50))}</span> <span style="font-size:11px;color:var(--text3)">median time in prep</span></div>
+      <div><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:22px;color:var(--ep-red)">${fmtAge(pctl(90))}</span> <span style="font-size:11px;color:var(--text3)">90th percentile</span></div>
+    </div>`:'';
+  const total=prepared.length;
+  body.innerHTML=headline+bands.map((b,i)=>{
+    if(!counts[i]) return '';
+    const p=Math.round(counts[i]/total*100);
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="min-width:120px;font-size:13px;font-weight:500;">${b.lbl}</div>
+      <div style="flex:1;height:8px;background:var(--surface2);border-radius:100px;overflow:hidden;"><div style="height:100%;width:${p}%;background:${b.col};border-radius:100px;"></div></div>
+      <div style="font-size:12px;white-space:nowrap;min-width:90px;text-align:right;"><span style="font-family:'Syne',sans-serif;font-weight:700;color:${b.col}">${p}%</span> <span style="color:var(--text3)">·</span> ${fmt(counts[i])}</div>
+    </div>`;
+  }).join('')+'<div style="font-size:11px;color:var(--text3);margin-top:8px;">Age = snapshot date − <code>prepshopcreated</code>. 3+ months in prep without going live is the actionable backlog.</div>';
+}
+
+// Diff current vs previous monthly snapshot, keyed on shopid.
+function bnRenderChanges(){
+  const body=document.getElementById('bn-chg-body');
+  const cnt=document.getElementById('bn-chg-cnt');
+  if(!bnPrevShops.length){
+    cnt.textContent='';
+    body.innerHTML='<div style="color:var(--text3);font-size:13px;">No previous upload to compare yet. After next month\'s import, the shops that went live (and other movements) show up here.</div>';
+    return;
+  }
+  const prev=new Map(); bnPrevShops.forEach(s=>{ if(s.shopid) prev.set(s.shopid,s); });
+  const curIds=new Set(); bnShops.forEach(s=>{ if(s.shopid) curIds.add(s.shopid); });
+  let wentLive=0, newStarted=0, newFailed=0, newShops=0, goneShops=0, changed=0;
+  bnShops.forEach(s=>{
+    if(!s.shopid) return;
+    const p=prev.get(s.shopid);
+    if(!p){ newShops++; if(s.bucket==='live') wentLive++; return; }
+    if(p.status===s.status) return;
+    changed++;
+    const wasLive=p.bucket==='live', isLive=s.bucket==='live';
+    if(!wasLive && isLive) wentLive++;
+    const wasStarted=['initial','prepared','final','live'].includes(p.bucket), isStarted=['initial','prepared','final','live'].includes(s.bucket);
+    if(!wasStarted && isStarted) newStarted++;
+    if(p.bucket!=='failed' && s.bucket==='failed') newFailed++;
+  });
+  prev.forEach((p,id)=>{ if(!curIds.has(id)) goneShops++; });
+  cnt.textContent=fmt(changed)+' shops changed status';
+  const stat=(val,lbl,col)=>`<div style="flex:1;min-width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:${col}">${fmt(val)}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;">${lbl}</div></div>`;
+  body.innerHTML='<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+    +stat(wentLive,'went live on Now','var(--ok)')
+    +stat(newStarted,'started migrating','var(--warn)')
+    +stat(newFailed,'newly failed','var(--ep-red)')
+    +stat(newShops,'new shops since last upload','#0ea5e9')
+    +stat(goneShops,'shops no longer present','var(--text3)')
+    +'</div>';
+}
+
+function bnRenderFunnel(){
+  const body=document.getElementById('bn-funnel-body');
+  const cnt=document.getElementById('bn-funnel-cnt');
+  const counts={};
+  bnShops.forEach(s=>{ counts[s.bucket]=(counts[s.bucket]||0)+1; });
+  const present=BN_BUCKET_ORDER.filter(b=>counts[b]);
+  const total=bnShops.length;
+  cnt.textContent=present.length+' states';
+  body.innerHTML=present.map(b=>{
+    const count=counts[b], p=Math.round((count/total)*100), col=BN_BUCKET_COLOR[b];
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="min-width:200px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${BN_BUCKET_LABEL[b]}</div>
+      <div style="flex:1;height:8px;background:var(--surface2);border-radius:100px;overflow:hidden;"><div style="height:100%;width:${p}%;background:${col};border-radius:100px;"></div></div>
+      <div style="font-size:12px;white-space:nowrap;min-width:90px;text-align:right;"><span style="font-family:'Syne',sans-serif;font-weight:700;color:${col}">${p}%</span> <span style="color:var(--text3)">·</span> ${fmt(count)}</div>
+    </div>`;
+  }).join('')+'<div style="padding-top:4px;"></div>';
+}
+
+function bnRenderProjectBreakdown(){
+  const pm={};
+  bnShops.filter(bnActiveScope).forEach(s=>{
+    const k=s.project||'(no project)';
+    if(!pm[k])pm[k]={total:0,live:0};
+    pm[k].total++;
+    if(s.bucket==='live')pm[k].live++;
+  });
+  const ps=Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('bn-project-cnt').textContent=ps.length+' projects';
+  document.getElementById('bn-project-bd').innerHTML=ps.map(([n,d])=>{
+    const p=d.total>0?Math.round((d.live/d.total)*100):0;
+    return`<div class="bd-row">
+      <div class="bd-name" title="${escHtml(n)}">${escHtml(n)}</div>
+      <div class="bd-bar-wrap"><div class="bd-bar" style="width:${p}%;background:var(--ok)"></div></div>
+      <div class="bd-nums"><span class="pct" style="color:var(--ok)">${p}%</span> <span style="color:var(--text3)">${fmt(d.live)} / ${fmt(d.total)}</span></div>
+    </div>`;
+  }).join('');
+  // Absolute remaining work: bars sized by backlog (not %), so the project with the most shops left dominates.
+  const pend=Object.entries(pm).map(([n,d])=>[n,{...d,pending:d.total-d.live}]).filter(([,d])=>d.pending>0).sort((a,b)=>b[1].pending-a[1].pending);
+  const maxPend=Math.max(1,...pend.map(([,d])=>d.pending));
+  document.getElementById('bn-pending-cnt').textContent=pend.length+' projects';
+  document.getElementById('bn-pending-bd').innerHTML=pend.length?pend.map(([n,d])=>{
+    const w=Math.round(d.pending/maxPend*100);
+    return`<div class="bd-row">
+      <div class="bd-name" title="${escHtml(n)}">${escHtml(n)}</div>
+      <div class="bd-bar-wrap"><div class="bd-bar" style="width:${w}%;background:var(--warn)"></div></div>
+      <div class="bd-nums"><span class="pct" style="color:var(--warn)">${fmt(d.pending)}</span> <span style="color:var(--text3)">left / ${fmt(d.total)}</span></div>
+    </div>`;
+  }).join(''):'<div style="padding:1rem 0;color:var(--text3);font-size:13px;text-align:center;">All in-scope shops are live. 🎉</div>';
+}
+
+function bnOnSearch(){ clearTimeout(bnSearchTimer); bnSearchTimer=setTimeout(()=>{bnCurrentPage=1;bnDoSearch();},200); }
+function bnToggleFilter(el,val){
+  if(val==='all'){
+    bnActiveFilters=new Set(['all']);
+    document.querySelectorAll('#page-basetonow .chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+  } else {
+    bnActiveFilters.delete('all');
+    document.getElementById('bn-chip-all').classList.remove('active');
+    if(bnActiveFilters.has(val)){bnActiveFilters.delete(val);el.classList.remove('active');}
+    else{bnActiveFilters.add(val);el.classList.add('active');}
+    if(!bnActiveFilters.size){bnActiveFilters.add('all');document.getElementById('bn-chip-all').classList.add('active');}
+  }
+  bnCurrentPage=1; bnDoSearch();
+}
+function bnMatchesFilter(s){
+  if(bnActiveFilters.has('all')) return true;
+  // "Has note" is a hard requirement (AND); the status chips combine with OR.
+  if(bnActiveFilters.has('noted') && !shopNotes[shopKey(s)]) return false;
+  const cats=[...bnActiveFilters].filter(f=>f!=='noted');
+  if(cats.length===0) return true;
+  let match=false;
+  if(bnActiveFilters.has('live')   && s.bucket==='live') match=true;
+  if(bnActiveFilters.has('prog')   && (s.bucket==='initial'||s.bucket==='prepared'||s.bucket==='final')) match=true;
+  if(bnActiveFilters.has('failed') && s.bucket==='failed') match=true;
+  if(bnActiveFilters.has('closed') && s.closed) match=true;
+  if(bnActiveFilters.has('aborted') && s.bucket==='aborted') match=true;
+  return match;
+}
+
+function bnDoSearch(){
+  const q=document.getElementById('bn-si').value.trim().toLowerCase();
+  const notedChip=document.getElementById('bn-chip-noted');
+  if(notedChip) notedChip.style.display=Object.keys(shopNotes).length?'':'none';
+  // Chips browse without a search term; a status/note chip alone lists all matching shops.
+  const browsing=[...bnActiveFilters].some(f=>f!=='all');
+  if(q.length<2 && !browsing){
+    document.getElementById('bn-search-info').style.display='none';
+    document.getElementById('bn-search-body').innerHTML=`
+      <div class="search-empty"><i class="ti ti-search"></i>
+      <p>Enter a search term or pick a filter chip.</p>
+      <p style="margin-top:4px;font-size:12px;color:var(--text3)">Minimum 2 characters · 50 results per page</p></div>`;
+    return;
+  }
+  let res=bnShops.filter(s=>{
+    if(!bnMatchesFilter(s)) return false;
+    return (s.alias||'').toLowerCase().includes(q)
+      ||(s.domain||'').toLowerCase().includes(q)
+      ||(s.project||'').toLowerCase().includes(q)
+      ||(s.shopid||'').toLowerCase().includes(q)
+      ||(s.database||'').toLowerCase().includes(q)
+      ||(BN_STATE[s.status]||'').toLowerCase().includes(q)
+      ||(BN_BUCKET_LABEL[s.bucket]||'').toLowerCase().includes(q);
+  });
+  if(bnSortCol){
+    res=[...res].sort((a,b)=>{ let av=a[bnSortCol]||'',bv=b[bnSortCol]||''; const r=av<bv?-1:av>bv?1:0; return bnSortDir==='asc'?r:-r; });
+  }
+  bnLastResults=res;
+  const totalPages=Math.max(1,Math.ceil(res.length/BN_PAGE_SIZE));
+  if(bnCurrentPage>totalPages)bnCurrentPage=totalPages;
+  const shown=res.slice((bnCurrentPage-1)*BN_PAGE_SIZE,bnCurrentPage*BN_PAGE_SIZE);
+  const info=document.getElementById('bn-search-info');
+  info.style.display='block';
+  info.textContent=res.length===0?'No shops found.':fmt(res.length)+' results'+(res.length>BN_PAGE_SIZE?' – page '+bnCurrentPage+' of '+totalPages:'');
+  if(!res.length){document.getElementById('bn-search-body').innerHTML=`<div class="search-empty"><i class="ti ti-mood-empty"></i><p>No shops found.</p></div>`;return;}
+  const cols=[{key:'name',label:'Alias'},{key:'project',label:'Project'},{key:'domain',label:'Domain'},{key:'bucket',label:'Status'},{key:'prepshopcreated',label:'Prep Created'},{key:'finalmigration',label:'Went Live'}];
+  const ths=cols.map(c=>{const sd=bnSortCol===c.key;return`<th class="sortable${sd?' sort-'+bnSortDir:''}" onclick="bnSortBy('${c.key}')">${c.label}<span class="sort-icon"></span></th>`;}).join('');
+  const rows=shown.map(s=>{
+    const col=BN_BUCKET_COLOR[s.bucket]||'var(--text3)';
+    const statusBadge=`<span class="badge" style="background:${col}18;color:${col};border-color:${col}40">${BN_BUCKET_LABEL[s.bucket]||'–'}</span>`;
+    const closedBadge=s.closed?` <span class="badge ot"><i class="ti ti-door-exit" style="font-size:10px"></i> Closed</span>`:'';
+    const dom=s.domain?`<a href="https://${s.domain}" target="_blank" class="domain">${s.domain}</a>`:`<span style="color:var(--text3)">–</span>`;
+    const note=shopNotes[shopKey(s)]||'';
+    const noteHtml=note?`<div class="cmt"><i class="ti ti-message-circle" style="font-size:10px"></i> ${escHtml(note)}</div>`:'';
+    const noteBtn=isAdmin?`<button class="note-btn" title="${note?'Edit note':'Add note'}" data-key="${escAttr(shopKey(s))}" onclick="editShopNote(this)"><i class="ti ti-${note?'edit':'message-plus'}" style="font-size:12px"></i></button>`:'';
+    return`<tr>
+      <td><div style="font-weight:500;display:flex;align-items:center;gap:6px">${s.name||s.alias||'–'}${closedBadge}${noteBtn}</div>${noteHtml}</td>
+      <td style="font-size:12px;color:var(--text2)">${s.project||'–'}</td>
+      <td>${dom}</td>
+      <td>${statusBadge}</td>
+      <td style="font-size:12px;color:var(--text2)">${bnFmtDate(s.prepshopcreated)}</td>
+      <td style="font-size:12px;color:var(--text2)">${bnFmtDate(s.finalmigration)}</td>
+    </tr>`;
+  }).join('');
+  const pag=totalPages>1?bnBuildPagination(bnCurrentPage,totalPages):'';
+  document.getElementById('bn-search-body').innerHTML=`<div class="tw"><table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>${pag}`;
+}
+function bnBuildPagination(cur,total){
+  const pages=[];
+  for(let i=1;i<=total;i++){ if(i===1||i===total||Math.abs(i-cur)<=2)pages.push(i); else if(pages[pages.length-1]!=='…')pages.push('…'); }
+  const btns=pages.map(p=>p==='…'?`<span class="pag-btn" style="cursor:default;border:none;background:none">…</span>`:`<button class="pag-btn${p===cur?' active':''}" onclick="bnGoPage(${p})">${p}</button>`).join('');
+  return`<div class="pagination"><span>${fmt((cur-1)*BN_PAGE_SIZE+1)}–${fmt(Math.min(cur*BN_PAGE_SIZE,bnLastResults.length))} of ${fmt(bnLastResults.length)}</span>
+    <div class="pag-btns"><button class="pag-btn" onclick="bnGoPage(${cur-1})" ${cur===1?'disabled':''}>&#8249;</button>${btns}<button class="pag-btn" onclick="bnGoPage(${cur+1})" ${cur===total?'disabled':''}>&#8250;</button></div></div>`;
+}
+function bnGoPage(p){bnCurrentPage=p;bnDoSearch();document.getElementById('bn-search-body').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function bnSortBy(col){if(bnSortCol===col)bnSortDir=bnSortDir==='asc'?'desc':'asc';else{bnSortCol=col;bnSortDir='asc';}bnDoSearch();}
 
 // ── Init: load from Supabase ─────────────────────────────────
 async function initAuthenticatedDashboard(){

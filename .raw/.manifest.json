@@ -9,6 +9,18 @@
       "pages_created": ["wiki/sources/meeting-2026-06-15-with-Chris.md", "wiki/entities/Sage.md", "wiki/entities/PayPal.md", "wiki/concepts/Base to Now Tracker.md"],
       "pages_updated": ["wiki/entities/Stripe.md", "wiki/questions/Questions Auto Translate.md", "wiki/index.md", "wiki/hot.md", "wiki/log.md"],
       "note": "Meeting notes scan (Notes 15.06.pdf). Sources{} history was lost in the 2026-06-16 IDB-restore corruption event; this entry was reconstructed."
+    },
+    ".raw/articles/under-the-river-2026-06-24.md": {
+      "hash": "manual-2026-06-24",
+      "ingested_at": "2026-06-24",
+      "pages_created": ["wiki/sources/Under the River — Shopify Agent Platform.md", "wiki/entities/Shopify.md", "wiki/concepts/Aquifer Agent Platform.md", "wiki/concepts/Brain-Hands Agent Architecture.md", "wiki/concepts/Durable Agent Sessions.md", "wiki/concepts/Nix.md"],
+      "pages_updated": ["wiki/index.md", "wiki/hot.md", "wiki/log.md"]
+    },
+    ".raw/articles/openclaw-2026-06-24.md": {
+      "hash": "manual-2026-06-24",
+      "ingested_at": "2026-06-24",
+      "pages_created": ["wiki/sources/OpenClaw — Self-Hosted Chat-to-Agent Gateway.md", "wiki/entities/OpenClaw.md", "wiki/entities/Peter Steinberger.md", "wiki/entities/Mattermost.md", "wiki/concepts/Chat-Native AI Agents.md", "wiki/concepts/Single-Operator Trust Boundary.md"],
+      "pages_updated": ["wiki/index.md", "wiki/hot.md", "wiki/log.md", "wiki/questions/Open Questions and Blockers.md"]
     }
   },
   "address_map": {
@@ -16,6 +28,18 @@
     "wiki/sources/meeting-2026-06-15-with-Chris.md": "c-000004",
     "wiki/entities/Sage.md": "c-000005",
     "wiki/entities/PayPal.md": "c-000006",
-    "wiki/concepts/Base to Now Tracker.md": "c-000007"
+    "wiki/concepts/Base to Now Tracker.md": "c-000007",
+    "wiki/sources/Under the River — Shopify Agent Platform.md": "c-000043",
+    "wiki/sources/OpenClaw — Self-Hosted Chat-to-Agent Gateway.md": "c-000044",
+    "wiki/entities/OpenClaw.md": "c-000045",
+    "wiki/entities/Shopify.md": "c-000046",
+    "wiki/entities/Peter Steinberger.md": "c-000047",
+    "wiki/entities/Mattermost.md": "c-000048",
+    "wiki/concepts/Brain-Hands Agent Architecture.md": "c-000049",
+    "wiki/concepts/Durable Agent Sessions.md": "c-000050",
+    "wiki/concepts/Chat-Native AI Agents.md": "c-000051",
+    "wiki/concepts/Aquifer Agent Platform.md": "c-000052",
+    "wiki/concepts/Nix.md": "c-000053",
+    "wiki/concepts/Single-Operator Trust Boundary.md": "c-000054"
   }
 }

@@ -154,20 +154,20 @@ Character-limit decision made by Donal & Wilfried: [AM-19783](https://epages.atl
 
 ### Provider rollout (pilot shops with feature activated)
 
-| Provider | Activation | Jira |
-|----------|-----------|------|
-| epagesCloud (epagesDE + UK) | 7.111.0 — Nov 12, 2025 | AM-19792 (Resolved) |
-| epagesCloud (epagesES, FR, IT, US) + all other Now-Providers? | 7.117.0 — Jun 17, 2026 | — |
-| epagesCloud – Claranet | 7.117.0 — Jun 17, 2026 | — |
-| epagesCloud – HostEurope | 7.117.0 — Jun 17, 2026 | — |
-| Acens | 7.114.0 — Mar 17, 2026 | AM-20061 (Reopened) |
-| Arsys | 7.114.0 — Mar 19, 2026 | AM-20061 (Reopened) |
-| TOnline / Telekom | 7.114.0 — Mar 25, 2026 | AM-20061 (Reopened) |
-| Vilkas | 7.115.0 — Apr 21, 2026 (manually) | AM-20169 (Resolved) |
-| 1und1EU | DE 7.114.0 — Apr 21, 2026; ES/FR/UK/IT 7.115.0 — May 5, 2026 (all manually) | AM-20170 (Review), AM-20186 (Resolved) |
-| Strato | NL 7.114.0 — Apr 22; DE 7.115.0 — Apr 28; ES/SE 7.115.0 — May 5, 2026 (manually) | AM-20168, AM-20176, AM-20184 (Resolved) |
-| Hostpoint | don't activate — they want extra adaptions? | — |
-| 1und1US | (not yet) | — |
+| Provider                                                      | Activation                                                                       | Jira                                    |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- |
+| epagesCloud (epagesDE + UK)                                   | 7.111.0 — Nov 12, 2025                                                           | AM-19792 (Resolved)                     |
+| epagesCloud (epagesES, FR, IT, US) + all other Now-Providers? | 7.117.0 — Jun 17, 2026                                                           | —                                       |
+| epagesCloud – Claranet                                        | 7.117.0 — Jun 17, 2026                                                           | —                                       |
+| epagesCloud – HostEurope                                      | 7.117.0 — Jun 17, 2026                                                           | —                                       |
+| Acens                                                         | 7.114.0 — Mar 17, 2026                                                           | AM-20061 (Reopened)                     |
+| Arsys                                                         | 7.114.0 — Mar 19, 2026                                                           | AM-20061 (Reopened)                     |
+| TOnline / Telekom                                             | 7.114.0 — Mar 25, 2026                                                           | AM-20061 (Reopened)                     |
+| Vilkas                                                        | 7.115.0 — Apr 21, 2026 (manually)                                                | AM-20169 (Resolved)                     |
+| 1und1EU                                                       | DE 7.114.0 — Apr 21, 2026; ES/FR/UK/IT 7.115.0 — May 5, 2026 (all manually)      | AM-20170 (Review), AM-20186 (Resolved)  |
+| Strato                                                        | NL 7.114.0 — Apr 22; DE 7.115.0 — Apr 28; ES/SE 7.115.0 — May 5, 2026 (manually) | AM-20168, AM-20176, AM-20184 (Resolved) |
+| Hostpoint                                                     | don't activate — they want extra adaptions?                                      | —                                       |
+| 1und1US                                                       | (not yet)                                                                        | —                                       |
 
 ### System configuration (for activation)
 
