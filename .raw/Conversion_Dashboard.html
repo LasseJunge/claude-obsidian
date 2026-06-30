@@ -129,6 +129,41 @@ const storage = {
     if (error) throw error;
     return { key, deleted: true };
   },
+  // ── Per-row storage (snapshot_rows) ──────────────────────────────
+  // Reads from snapshot_rows; falls back to the legacy single-row blob
+  // for datasets not yet migrated. Writes touch one row, not the array.
+  async loadSnapshots(dataset) {
+    try {
+      const { data, error } = await this._getClient()
+        .from('snapshot_rows')
+        .select('payload')
+        .eq('dataset', dataset)
+        .order('snapshot_at', { ascending: true });
+      if (!error && data && data.length) return data.map(r => r.payload);
+    } catch {}
+    const legacy = await this.get(dataset);
+    return legacy?.value ? JSON.parse(legacy.value) : [];
+  },
+  async upsertSnapshot(dataset, snap) {
+    const { error } = await this._getClient()
+      .from('snapshot_rows')
+      .upsert({ id: snap.id, dataset, snapshot_at: snap.snapshotAt, payload: snap }, { onConflict: 'id' });
+    if (error) throw error;
+  },
+  async deleteSnapshot(id) {
+    const { error } = await this._getClient()
+      .from('snapshot_rows')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+  async deleteDataset(dataset) {
+    const { error } = await this._getClient()
+      .from('snapshot_rows')
+      .delete()
+      .eq('dataset', dataset);
+    if (error) throw error;
+  },
 };
 
 const C = {
@@ -299,9 +334,9 @@ function SubscriptionDashboard() {
     setLoading(true);
     (async () => {
       try {
-        const r = await storage.get(dataset.storageKey);
+        const list = await storage.loadSnapshots(dataset.storageKey);
         if (cancelled) return;
-        setSnapshots(r?.value ? JSON.parse(r.value) : []);
+        setSnapshots(Array.isArray(list) ? list : []);
       } catch {
         if (!cancelled) setSnapshots([]);
       }
@@ -337,6 +372,7 @@ function SubscriptionDashboard() {
 
     let processed = 0, working = [...snapshots], added = 0, skipped = 0;
     const fileDiagnostics = [];
+    const newSnaps = [];
 
     const finishFile = (diagnostic) => {
       fileDiagnostics.push(diagnostic);
@@ -368,15 +404,18 @@ function SubscriptionDashboard() {
             outcome: 'added',
             status: analysis.diagnostic.warnings.length ? 'warning' : 'ok',
           };
-          working.push({
+          const snapshot = {
             id: `${file.name}-${Date.now()}-${processed}`,
             fileName: file.name,
             snapshotAt,
             uploadedAt: new Date().toISOString(),
             shops: analysis.shops,
             count: analysis.shops.length,
+            rawRows: analysis.diagnostic.rawRows,
             diagnostics: diagnostic,
-          });
+          };
+          working.push(snapshot);
+          newSnaps.push(snapshot);
           added++;
           finishFile(diagnostic);
         },
@@ -389,7 +428,10 @@ function SubscriptionDashboard() {
 
     function finalize() {
       working.sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
-      setSnapshots(working); persistSnapshots(working);
+      setSnapshots(working);
+      persistSnapshots(working);                       // legacy dual-write (remove after soak)
+      Promise.all(newSnaps.map(s => storage.upsertSnapshot(dataset.storageKey, s)))
+        .catch(() => setError('Storage issue — a snapshot may not have been saved.'));
       const report = createImportReport(fileDiagnostics);
       setImportDiagnosis(report);
       const parts = [];
@@ -405,14 +447,17 @@ function SubscriptionDashboard() {
 
   const removeSnapshot = (id) => {
     const next = snapshots.filter(s => s.id !== id);
-    setSnapshots(next); persistSnapshots(next);
+    setSnapshots(next);
+    persistSnapshots(next);                            // legacy dual-write (remove after soak)
+    storage.deleteSnapshot(id).catch(() => setError('Storage issue — a snapshot may not have been deleted.'));
   };
 
   const resetAll = async () => {
     if (!window.confirm('Really delete all snapshots?')) return;
     setSnapshots([]);
     setImportDiagnosis(null);
-    try { await storage.delete(dataset.storageKey); } catch {}
+    try { await storage.deleteDataset(dataset.storageKey); } catch {}
+    try { await storage.delete(dataset.storageKey); } catch {}   // legacy blob (remove after soak)
     setInfo('All data deleted.');
   };
 
@@ -791,7 +836,7 @@ function SubscriptionDashboard() {
     const make = () => ({ total: 0, directActive: 0, rescuedActive: 0, stillTrial: 0, stillTrialEnded: 0, paymentFailed: 0, other: 0 });
     const r = { Shop: make(), Website: make() };
     if (!latest) return r;
-    filteredShops.forEach(shop => {
+    cohortShops.forEach(shop => {
       if (!shop.createdAt) return;
       const cat = dataset.classifyPackage(shop.package);
       if (cat !== 'Shop' && cat !== 'Website') return;
@@ -809,7 +854,7 @@ function SubscriptionDashboard() {
       else bucket.other++;
     });
     return r;
-  }, [filteredShops, latest, dataset]);
+  }, [cohortShops, latest, dataset]);
 
   const timeSeries = useMemo(() => sorted.map(snap => {
     const c = { TRIAL_STARTED: 0, TRIAL_ENDED: 0, ACTIVE: 0, PAYMENT_FAILED: 0 };
@@ -1507,13 +1552,14 @@ function createImportReport(files, createdAt = new Date().toISOString()) {
     acc.rawRows += f.rawRows || 0;
     acc.importedRows += f.importedRows || 0;
     acc.skippedRows += f.skippedRows || 0;
+    acc.internalExcluded += f.internalExcluded || 0;
     acc.warnings += f.warnings?.length || 0;
     acc.errors += f.errors?.length || 0;
     if (f.outcome === 'added') acc.added++;
     if (f.outcome === 'skipped') acc.skipped++;
     if (f.outcome === 'failed' || f.status === 'error') acc.failed++;
     return acc;
-  }, { files: 0, added: 0, skipped: 0, failed: 0, rawRows: 0, importedRows: 0, skippedRows: 0, warnings: 0, errors: 0 });
+  }, { files: 0, added: 0, skipped: 0, failed: 0, rawRows: 0, importedRows: 0, skippedRows: 0, internalExcluded: 0, warnings: 0, errors: 0 });
 
   return {
     id: `import-${createdAt}`,
@@ -1528,7 +1574,7 @@ function analyzeImportFile(file, results, existingSnapshots, dateInfo) {
   const fields = results.meta.fields || [];
   const rows = Array.isArray(results.data) ? results.data : [];
   const missingColumns = REQUIRED_IMPORT_COLUMNS.filter(col => !fields.includes(col));
-  const isDuplicateFile = existingSnapshots.some(s => s.fileName === file.name && s.count === rows.length);
+  const isDuplicateFile = existingSnapshots.some(s => s.fileName === file.name && (s.rawRows ?? s.count) === rows.length);
   const warnings = [];
   const errors = [];
   const statusCounts = {};
@@ -1538,6 +1584,7 @@ function analyzeImportFile(file, results, existingSnapshots, dateInfo) {
   let missingCustomerIds = 0;
   let missingStatuses = 0;
   let skippedRows = 0;
+  let internalExcluded = 0;
   let emptyCreatedAt = 0;
   let invalidCreatedAt = 0;
 
@@ -1547,12 +1594,14 @@ function analyzeImportFile(file, results, existingSnapshots, dateInfo) {
     rows.forEach(row => {
       const customerId = String(row.stripe_customer_id || '').trim();
       const status = String(row.stripe_subscription_status || '').trim().toUpperCase();
-      const createdAt = String(row.created_at || '').trim();
+      const createdAtRaw = String(row.created_at || '').trim();
+      const createdAtParsed = parseLoginDate(createdAtRaw);
+      const createdAt = createdAtParsed ? createdAtParsed.toISOString() : createdAtRaw;
       const loginEmail = String(row.login_email || '').trim().toLowerCase();
 
       // Testshops (ePages-interne Accounts) ausschließen
       if (loginEmail.endsWith('@epages.com')) {
-        skippedRows++;
+        internalExcluded++;
         return;
       }
 
@@ -1568,8 +1617,8 @@ function analyzeImportFile(file, results, existingSnapshots, dateInfo) {
         unknownStatusCounts[status] = (unknownStatusCounts[status] || 0) + 1;
       }
       customerCounts.set(customerId, (customerCounts.get(customerId) || 0) + 1);
-      if (!createdAt) emptyCreatedAt++;
-      else if (Number.isNaN(Date.parse(createdAt))) invalidCreatedAt++;
+      if (!createdAtRaw) emptyCreatedAt++;
+      else if (!createdAtParsed) invalidCreatedAt++;
 
       shops.push({
         customerId,
@@ -1613,6 +1662,7 @@ function analyzeImportFile(file, results, existingSnapshots, dateInfo) {
       rawRows: rows.length,
       importedRows: shops.length,
       skippedRows,
+      internalExcluded,
       missingCustomerIds,
       missingStatuses,
       emptyCreatedAt,
@@ -1639,6 +1689,7 @@ function createParseErrorDiagnostic(file, err) {
     rawRows: 0,
     importedRows: 0,
     skippedRows: 0,
+    internalExcluded: 0,
     missingCustomerIds: 0,
     missingStatuses: 0,
     emptyCreatedAt: 0,
@@ -1736,6 +1787,13 @@ function ImportDiagnosis({ report }) {
           <DiagnosticMetric label="Rows" value={report.totals.rawRows} />
           <DiagnosticMetric label="Imported" value={report.totals.importedRows} />
         </div>
+
+        {report.totals.internalExcluded > 0 && (
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+            <Info size={12} style={{ flexShrink: 0 }} />
+            <span>Excluded (internal): <strong style={{ color: C.inkSoft }}>{report.totals.internalExcluded}</strong> · @epages.com</span>
+          </div>
+        )}
 
         {report.totals.files > 1 && (
           <div style={{ marginTop: 8, fontSize: 10, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
