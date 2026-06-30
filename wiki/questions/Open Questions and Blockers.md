@@ -87,7 +87,7 @@ Blocked before any build can start. Plan: [[Base to Now Tracker]].
 
 Context: [[2026-06-17-paypal-migration-tracking]].
 
-- [x] **How many PayPal versions are being shut down — 2 or 3?** Chris said 2, Karsten said 3. Karsten owns the CSV (likely authoritative). Confirm exact version names. Candidates in the data: PayPal (1,082), PayPalPro (17), PayPalIntegralEvolution (7). → Decides which values are classified `shutdown` → the "On Shutdown Versions" KPI + migration target.
+- [x] **How many PayPal versions are being shut down — 2 or 3?** **Resolved 2026-06-30: 3** — all of PayPal (1,082), PayPalPro (17), PayPalIntegralEvolution (7) are being shut down (Karsten, who owns the CSV). → Action: ensure all three are marked `shutdown` in the dashboard's **PayPal Gateways** modal (runtime config); drives the "On Shutdown Versions" KPI + migration baseline.
 
 ## For the team (OpenClaw / company Mattermost agent — evaluation)
 
@@ -107,7 +107,7 @@ Idea: integrate [[OpenClaw]] company-wide, chat to it on [[Mattermost]], give it
 | AutoTranslate budget findings | Chris call | questions ready — **chased 2026-06-24** (priority) |
 | AutoTranslate automated feed | R&D ticket | comment posted, ticket pending — **chased 2026-06-24** |
 | Base → Now tracker | shoptype (next export) | **schema received 2026-06-24 — ready to build on assumptions** |
-| PayPal shutdown KPI | Chris + Karsten | gateway config pending answer — **chased 2026-06-24** |
+| PayPal shutdown KPI | Chris + Karsten | **resolved 2026-06-30 — 3 versions; set all three `shutdown` in the modal** |
 
 > [!note] Chased 2026-06-24
 > No answers received since the questions were raised 2026-06-23. Sent per-person follow-ups to Chris (AutoTranslate call — priority), Karsten (Base→Now sample export + PayPal version count), and R&D (export ticket). Awaiting replies.

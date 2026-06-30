@@ -2017,9 +2017,6 @@ const AT_BUDGETS={
   cloudDirect:{NowM:1000000,NowL:1000000,NowXL:5000000},
   other:      {NowM:500000, NowL:500000, NowXL:1000000},
 };
-// Largest base package across all tables (Cloud NowXL). A non-AddOn shop above this is definitively
-// over its package regardless of ShopType — so we can flag it even before the export carries shoptype.
-const AT_MAX_BASE=5000000;
 // Cloud/Direct = ePages-operated providers (epagesCloud, Direct/epagesDE…). Everyone else uses the lower table.
 function atIsCloudDirect(partner){
   const p=(partner||'').toLowerCase();
@@ -2035,14 +2032,15 @@ function atShopTier(shoptype){
   return '';
 }
 // Effective character budget for a shop. AddOn → flat 25M cap (reliable from the current CSV).
-// Otherwise the per-ShopType base budget, which needs a known Now tier (NowS has no package).
-// Returns null when the budget can't be determined (e.g. shoptype absent until the scheduled export lands).
+// Otherwise the per-ShopType base budget. ShopType is absent in the current CSVs (only the
+// scheduled usageAutoTranslation.pl export carries it), so when the tier is unknown we ASSUME
+// the shop can use the max base package for its provider category (Cloud/Direct NowXL 5M,
+// everyone else NowXL 1M). Exact tier value is used when ShopType is actually present.
 function atEffectiveBudget(e){
   if(e.addOnBought) return AT_ADDON_CAP;
-  const tier=atShopTier(e.shoptype);
-  if(!tier||tier==='NowS') return null;
   const table=atIsCloudDirect(e.partner)?AT_BUDGETS.cloudDirect:AT_BUDGETS.other;
-  return table[tier]??null;
+  const tier=atShopTier(e.shoptype);
+  return (tier&&table[tier])||table.NowXL;
 }
 
 function atParseCSV(text){
@@ -2148,6 +2146,18 @@ function atGetFilteredRows(){
   return rows;
 }
 
+// Each CSV is a CUMULATIVE per-shop snapshot (TranslatedCharacters = running total), so
+// collapse multi-week rows to one row per shop — the newest week wins. Summing across
+// imports would double-count any shop that appears in more than one weekly snapshot.
+function atLatestByAlias(rows){
+  const latest={};
+  rows.forEach(r=>{
+    const key=r.alias||r.store;
+    if(!latest[key]||r.week>latest[key].week) latest[key]=r;
+  });
+  return Object.values(latest);
+}
+
 function atGetAllStores(){
   const s=new Set();
   atData.forEach(d=>d.rows.forEach(r=>{if(r.partner)s.add(r.partner);}));
@@ -2176,22 +2186,22 @@ function atRefresh(){
 }
 
 function atRenderKPIs(){
-  const rows=atGetFilteredRows();
+  // Collapse to the latest snapshot per shop before summing — raw rows would double-count
+  // any shop present in multiple weekly imports (cumulative data, see atLatestByAlias).
+  const rows=atLatestByAlias(atGetFilteredRows());
   const totalCost=rows.reduce((a,r)=>a+r.costsDeepl,0);
   const totalTranslated=rows.reduce((a,r)=>a+r.translatedCharacters,0);
   const totalShop=rows.reduce((a,r)=>a+r.shopCharacters,0);
   const shops=new Set(rows.map(r=>r.alias||r.store));
   const avgCost=shops.size>0?totalCost/shops.size:0;
   const weeks=atGetFilteredWeeks();
-  const lastWeek=weeks[weeks.length-1];
-  const lastRows=rows.filter(r=>r.week===lastWeek);
-  const activeShops=new Set(lastRows.filter(r=>r.translatedCharacters>0).map(r=>r.alias||r.store)).size;
+  const activeShops=rows.filter(r=>r.translatedCharacters>0).length;
   document.getElementById('at-k-cost').textContent=atFmtEuro(totalCost);
   document.getElementById('at-k-cost-sub').textContent=weeks.length+' week'+(weeks.length!==1?'s':'');
   document.getElementById('at-k-translated').textContent=fmt(totalTranslated);
   document.getElementById('at-k-shop').textContent=fmt(totalShop);
   document.getElementById('at-k-stores').textContent=shops.size;
-  document.getElementById('at-k-stores-sub').textContent=activeShops+' active last week';
+  document.getElementById('at-k-stores-sub').textContent=activeShops+' active';
   document.getElementById('at-k-avgcost').textContent=atFmtEuro(avgCost);
 }
 
@@ -2207,12 +2217,13 @@ function atRenderCharts(){
     atChart1=new Chart(ctx1.getContext('2d'),{type:'line',data:{labels:weeks,datasets:[{label:'Total Cost (€)',data:weekTotals,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.08)',borderWidth:2,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#0891b2',tension:.3,fill:true}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(17,17,17,.92)',titleColor:'rgba(255,255,255,.6)',bodyColor:'#fff',borderColor:'rgba(255,255,255,.1)',borderWidth:1,padding:10,titleFont:{family:'Inter',size:11},bodyFont:{family:'Inter',size:12},boxPadding:4,callbacks:{label:c=>` Cost: ${atFmtEuro(c.parsed.y)}`}}},scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{family:'Inter',size:11},maxRotation:0,maxTicksLimit:12}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{family:'Inter',size:11},callback:v=>'€'+Number(v).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0})}}}}});
   }
 
-  // Bar chart: cost by partner — week-filtered only, ignores partner filter
+  // Bar chart: cost by partner — week-filtered only, ignores partner filter. Collapse to the
+  // latest snapshot per shop first (cumulative data) so multi-week shops aren't double-counted.
   const allWeekRows=[];
   const filteredWeekSet=new Set(weeks);
-  atData.forEach(d=>{if(filteredWeekSet.has(d.week))d.rows.forEach(r=>allWeekRows.push(r));});
+  atData.forEach(d=>{if(filteredWeekSet.has(d.week))d.rows.forEach(r=>allWeekRows.push({...r,week:d.week}));});
   const storeTotals={};
-  allWeekRows.forEach(r=>{const k=r.partner||r.store;storeTotals[k]=(storeTotals[k]||0)+r.costsDeepl;});
+  atLatestByAlias(allWeekRows).forEach(r=>{const k=r.partner||r.store;storeTotals[k]=(storeTotals[k]||0)+r.costsDeepl;});
   const sorted=Object.entries(storeTotals).sort((a,b)=>b[1]-a[1]);
   const ctx2=document.getElementById('at-chart2');
   if(ctx2){
@@ -2222,27 +2233,21 @@ function atRenderCharts(){
 }
 
 function atRenderTable(){
-  const rows=atGetFilteredRows();
-  const byAlias={};
-  rows.forEach(r=>{
-    const key=r.alias||r.store;
-    if(!byAlias[key]) byAlias[key]={alias:key,partner:r.partner,domain:r.domain,shoptype:'',tlc:0,shopChars:0,translatedChars:0,cost:0,addOnBought:false,addOnDate:''};
-    byAlias[key].tlc=Math.max(byAlias[key].tlc,r.translatedLanguageCount);
-    byAlias[key].shopChars+=r.shopCharacters;
-    byAlias[key].translatedChars+=r.translatedCharacters;
-    byAlias[key].cost+=r.costsDeepl;
-    if(!byAlias[key].shoptype&&r.shoptype) byAlias[key].shoptype=r.shoptype;
-    if(r.addOnBought){byAlias[key].addOnBought=true;if(r.addOnDate)byAlias[key].addOnDate=r.addOnDate;}
-  });
-  let entries=Object.values(byAlias);
-  // Budget utilization: translated chars vs the shop's effective character budget (per-shop total, not per-language).
-  // budgetPct=-1 sorts unknowns last. overPackageNoAddon = a non-AddOn shop definitively past its package and
-  // therefore a billing gap: either the exact % is >=100, or — when ShopType is unknown — usage already exceeds
-  // the largest base package any tier could grant (AT_MAX_BASE), so it's over regardless of tier.
+  // One row per shop at its latest snapshot (cumulative data — newest week wins, never sum
+  // across imports). New shops appear; existing shops update to their newest values.
+  let entries=atLatestByAlias(atGetFilteredRows()).map(r=>({
+    alias:r.alias||r.store,partner:r.partner,domain:r.domain,shoptype:r.shoptype||'',
+    tlc:r.translatedLanguageCount,shopChars:r.shopCharacters,translatedChars:r.translatedCharacters,
+    cost:r.costsDeepl,addOnBought:!!r.addOnBought,addOnDate:r.addOnDate||''
+  }));
+  // Budget utilization: translated chars vs the shop's effective character budget (per-shop total,
+  // not per-language). atEffectiveBudget always resolves now (exact tier when known, else the
+  // assumed category max), so budgetPct is always a real number. overPackageNoAddon = a non-AddOn
+  // shop past its (possibly assumed) package — a likely billing gap.
   entries.forEach(e=>{
     e.budget=atEffectiveBudget(e);
-    e.budgetPct=e.budget?(e.translatedChars/e.budget)*100:-1;
-    e.overPackageNoAddon=!e.addOnBought && ((e.budget&&e.budgetPct>=100) || (!e.budget&&e.translatedChars>AT_MAX_BASE));
+    e.budgetPct=(e.translatedChars/e.budget)*100;
+    e.overPackageNoAddon=!e.addOnBought && e.budgetPct>=100;
   });
   if(atSearchQ){
     entries=entries.filter(e=>
@@ -2260,22 +2265,17 @@ function atRenderTable(){
     const util=e.shopChars>0?Math.round((e.translatedChars/e.shopChars)*100):0;
     const dom=e.domain?`<a href="https://${e.domain}" target="_blank" class="domain">${e.domain}</a>`:`<span style="color:var(--text3)">–</span>`;
     const addOn=e.addOnBought?`<span class="badge st" title="AddOn bought${e.addOnDate?' · '+e.addOnDate:''}"><i class="ti ti-plus" style="font-size:10px"></i> AddOn${e.addOnDate?' · '+e.addOnDate:''}</span>`:'';
-    // Budget Use: translated chars vs effective budget. Banded green/amber/red; "–" when budget is undeterminable.
-    let budCell=`<span style="color:var(--text3)" title="Budget unknown – needs ShopType (pending the scheduled export)">–</span>`;
-    if(e.budget){
-      const bpct=Math.round(e.budgetPct);
-      const bcolor=bpct>=100?'#dc2626':bpct>=80?'#d97706':'#16a34a';
-      const capNote=e.addOnBought?'25M (AddOn cap)':fmt(e.budget)+(atShopTier(e.shoptype)?' ('+atShopTier(e.shoptype)+')':'');
-      budCell=`<span style="color:${bcolor};font-weight:600" title="${fmt(e.translatedChars)} / ${capNote}">${bpct}%</span>`;
-    } else if(e.overPackageNoAddon){
-      // ShopType unknown, but usage already exceeds the largest possible base package and no AddOn was bought.
-      budCell=`<span style="color:#dc2626;font-weight:600" title="${fmt(e.translatedChars)} chars, no AddOn — over every base package (max ${fmt(AT_MAX_BASE)}). Exact % needs ShopType.">&gt;100%</span>`;
-    }
+    // Budget Use: translated chars vs effective budget. Banded green/amber/red. Budget is always
+    // resolvable now (exact tier when known, else the assumed category max), so this never shows "–".
+    const bpct=Math.round(e.budgetPct);
+    const bcolor=bpct>=100?'#dc2626':bpct>=80?'#d97706':'#16a34a';
+    const capNote=e.addOnBought?'25M (AddOn cap)':fmt(e.budget)+(atShopTier(e.shoptype)?' ('+atShopTier(e.shoptype)+')':' (assumed max)');
+    const budCell=`<span style="color:${bcolor};font-weight:600" title="${fmt(e.translatedChars)} / ${capNote}">${bpct}%</span>`;
     return`<tr>
       <td style="font-weight:500">${e.alias}</td>
       <td style="font-size:12px;color:var(--text2)">${e.partner||'–'}</td>
       <td>${dom}</td>
-      <td style="font-size:12px;color:var(--text2)">${e.tlc||'–'}</td>
+      <td style="font-size:12px;color:var(--text2)">${e.tlc||'–'}${(e.tlc>0&&e.translatedChars===0)?` <span style="color:#d97706;font-weight:700;cursor:help" title="${e.tlc} language${e.tlc>1?'s':''} configured but 0 characters translated — possible setup or scheduler issue">⚠</span>`:''}</td>
       <td style="font-size:12px;color:var(--text2)">${fmt(e.shopChars)}</td>
       <td style="font-size:12px"><span style="color:var(--text)">${fmt(e.translatedChars)}</span>${util>0?`<span style="color:var(--text3);font-size:11px;margin-left:4px">${util}%</span>`:''}</td>
       <td style="font-size:12px">${budCell}</td>
@@ -2288,11 +2288,13 @@ function atRenderTable(){
   const nearOver=budgeted.filter(e=>e.budgetPct>=80).length;
   const overCap=entries.filter(e=>e.addOnBought&&e.budgetPct>=100).length;
   const overPkg=entries.filter(e=>e.overPackageNoAddon).length;
+  const zeroTx=entries.filter(e=>e.tlc>0&&e.translatedChars===0).length;
   const countEl=document.getElementById('at-table-count');
   countEl.textContent=entries.length+' shops'+(budgeted.length?` · ${nearOver} ≥80% of budget`:'');
-  const addFlag=(n,label,title)=>{ if(!n) return; const s=document.createElement('span'); s.style.cssText='color:#dc2626;font-weight:700;margin-left:8px'; s.title=title; s.textContent=`· ${n} ${label}`; countEl.appendChild(s); };
+  const addFlag=(n,label,title,color='#dc2626')=>{ if(!n) return; const s=document.createElement('span'); s.style.cssText=`color:${color};font-weight:700;margin-left:8px`; s.title=title; s.textContent=`· ${n} ${label}`; countEl.appendChild(s); };
   addFlag(overPkg,'over base pkg (no AddOn)','Non-AddOn shops past their package budget — should have been prompted to buy the AddOn. Likely billing gap.');
   addFlag(overCap,'over AddOn cap','AddOn shops translating beyond the 25M AutoTranslationMaxCharacters ceiling — overage cost not covered by the AddOn package.');
+  addFlag(zeroTx,'configured, 0 translated','Shops with languages configured but zero translated characters — possible setup or scheduler issue.','#d97706');
   document.getElementById('at-table-body').innerHTML=`<div class="tw"><table><thead><tr>${ths}</tr></thead><tbody>${trows||'<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">No data for selected filters</td></tr>'}</tbody></table></div>`;
 }
 

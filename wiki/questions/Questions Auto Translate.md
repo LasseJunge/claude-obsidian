@@ -3,7 +3,7 @@ type: question
 address: c-000008
 title: Questions Auto Translate
 created: 2026-06-10
-updated: 2026-06-23
+updated: 2026-06-30
 tags:
   - autotranslate
   - deepl
@@ -80,7 +80,7 @@ Known partners in the 2026-05-26 export:
 | 1und1EU | Store13, Store18–Store27 |
 | TOnline | Store2, Store6, Store7 |
 
-**Known edge case:** `HostEurope` appears inside the `epagesCloud:` block without its own section header → gets assigned partner `epagesCloud` incorrectly. No fix without a manual mapping table or a corrected CSV.
+**Known edge case:** `HostEurope` appears inside the `epagesCloud:` block without its own section header → gets assigned partner `epagesCloud` incorrectly. No fix without a manual mapping table or a corrected CSV. *(2026-06-30: the 36 HostEurope shops are identifiable via `.raw/20260526_migration_shops.csv` where `database=HostEurope` — but a dashboard override was deferred as it couples to a stale snapshot and is unverified against live data. Durable fix = corrected export with a HostEurope section header. See Changes 2026-06-30.)*
 
 ---
 
@@ -112,6 +112,47 @@ Dashboard page added to `Spreedly_Conversion.html` on 2026-06-10.
 | AddOn badge never appeared | `addOnBought` / `addOnDate` not copied into `byAlias` aggregation | Added propagation in the forEach loop |
 | CostsDeepl always 0 | European format `"3,43 €"` not parsed correctly | `atParseCost()` helper handles period=thousands, comma=decimal |
 | Partner filter dropdown showed store types, not partner names | `atGetAllStores()` was collecting `r.store` values | Changed to collect `r.partner` |
+
+---
+
+## Changes (2026-06-30 session)
+
+### Multi-CSV merge is now snapshot-based, not additive ⚠️ behaviour change
+
+The CSV columns are **cumulative per-shop snapshots** (`TranslatedCharacters` = running total), but
+the dashboard used to **sum** each shop across every imported week — so a shop present in two
+imports was double-counted. Fixed with a new `atLatestByAlias()` helper: rows are now collapsed to
+**one row per shop at its newest week** (latest snapshot wins, never summed). Routed through it:
+the store table (`atRenderTable`), the KPI cards (`atRenderKPIs`), and the Cost-by-Partner bar
+chart. The per-week cost **line chart** is intentionally left per-week (cumulative-spend growth).
+Net effect: a second import now upserts — existing shops update to their newest values, new shops
+are added, shops missing from the new file keep their last-known values.
+
+### Budget Use now shown for every shop (assumed-max fallback)
+
+`atEffectiveBudget()` previously returned `null` when ShopType was unknown — which is **always**,
+since the current CSVs don't carry ShopType (only the scheduled `usageAutoTranslation.pl` export
+would). So Budget Use showed "–" for nearly everyone. Now, when the tier is unknown, the shop is
+assumed to get the **max base package for its provider category**: Cloud/Direct → **5M** (NowXL),
+everyone else → **1M** (NowXL); AddOn shops still → 25M; exact tier value is used if ShopType is
+ever present. The cell tooltip appends **"(assumed max)"** so a guessed budget isn't read as a real
+per-ShopType figure. The old `AT_MAX_BASE` constant and its dead "over every base package" branch
+were removed (superseded). ⚠️ Consequence: red ">100%" flags are now "probably over" (built on an
+assumed budget), not "definitely over" — until ShopType lands in the export.
+
+### Zero-translation flag
+
+Shops with languages configured (`tlc > 0`) but **0 translated characters** now get an amber ⚠ in
+the Languages column and a "`N configured, 0 translated`" counter in the table header — answers the
+open question below. Likely a setup or scheduler issue.
+
+### HostEurope mis-attribution — assessed, deferred
+
+The 36 HostEurope shops *are* identifiable (the `20260526_migration_shops.csv` tags them
+`database=HostEurope`, e.g. `nawrath-motorsport.de`, `shop.pommerntraum.de`). Decision: **don't**
+bake that into the dashboard — it couples to a stale 2026-05-26 snapshot, and it's unverified
+whether those domains/formats match the live AT data. Durable fix = a corrected export giving
+HostEurope its own section header. See edge-case note below.
 
 ---
 
@@ -295,7 +336,7 @@ Confirmed by re-reading the Confluence tables 2026-06-23. `AutoTranslationMaxPac
 - [ ] What is the expected cost per week across all stores? *(now derivable — 20 €/1M chars sent to DeepL; needs the `usageAutoTranslation.pl` export to compute actuals)*
 - [ ] How does cost trend week-over-week?
 - [x] Is there a cost ceiling / budget we are tracking against? *(answered 2026-06-23 — per-ShopType package limits, hard cap 25M chars once AddOn bought; pricing 20 €/1M chars.)*
-- [ ] Are there stores with languages configured but zero translated characters?
+- [~] Are there stores with languages configured but zero translated characters? *(now surfaced in the dashboard — amber ⚠ in the Languages column + header counter, added 2026-06-30. The list itself still needs a look.)*
 
 ---
 
