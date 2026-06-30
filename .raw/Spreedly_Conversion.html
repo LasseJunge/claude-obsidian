@@ -1224,6 +1224,7 @@ async function authLogout(){
   await sb.auth.signOut();
   shops = [];
   baseline = null;
+  spPrevShops = [];
   setAuthLocked(true);
   refresh();
   renderDataFieldsBaseline();
@@ -1262,6 +1263,7 @@ let shops = [];
 let baseline = null;
 let partnerBaseline = {};
 let baselineShops = [];
+let spPrevShops = [];      // previous Spreedly import snapshot — for "newly left" detection
 let shopNotes = {};   // { [shopKey]: "note text" } — admin-editable per-shop notes (e.g. "shop closed")
 
 // ── Supabase helpers ──────────────────────────────────────────
@@ -1311,6 +1313,11 @@ async function dbLoadAll(){
   if(csvText){
     const parsed = parseCSVAuto(csvText);
     if(parsed.length) shops = parsed;
+  }
+  const prevText = await dbLoadSpreedlyPrevCSV();
+  if(prevText){
+    const prevParsed = parseCSVAuto(prevText);
+    if(prevParsed.length) spPrevShops = prevParsed;
   }
 }
 
@@ -1364,9 +1371,20 @@ async function dbLoadCSV(){
   if(error){ console.error('dbLoadCSV error:', error); return null; }
   return await data.text();
 }
+async function dbSaveSpreedlyPrevCSV(rawText){
+  if(!currentUser || !isAdmin) return;
+  const blob=new Blob([rawText],{type:'text/csv'});
+  await sb.storage.from('csv-imports').upload('spreedly_prev.csv',blob,{upsert:true});
+}
+async function dbLoadSpreedlyPrevCSV(){
+  if(!currentUser) return null;
+  const {data,error}=await sb.storage.from('csv-imports').download('spreedly_prev.csv');
+  if(error) return null;
+  return await data.text();
+}
 async function dbClearShops(){
   if(!currentUser || !isAdmin) return;
-  await sb.storage.from('csv-imports').remove(['latest.csv']);
+  await sb.storage.from('csv-imports').remove(['latest.csv','spreedly_prev.csv']);
   await sb.from('baseline').delete().eq('id',1);
 }
 
@@ -1609,9 +1627,11 @@ function shopKey(s){
 function getGoneShops(){
   if(!baselineShops.length) return [];
   const currentKeys=new Set(shops.map(shopKey));
+  const prevKeys=new Set(spPrevShops.map(shopKey));
+  // _newlyLeft: present in the previous import but absent now → left in the latest snapshot.
   return baselineShops
     .filter(s=>shopKey(s) && !currentKeys.has(shopKey(s)))
-    .map(s=>({...s, _gone:true}));
+    .map(s=>({...s, _gone:true, _newlyLeft: prevKeys.has(shopKey(s))}));
 }
 
 function doSearch(){
@@ -1697,7 +1717,10 @@ function doSearch(){
     const sl=isSlpr(s);
     const gone=!!s._gone;
     const slB=sl?` <span class="badge sl"><i class="ti ti-moon" style="font-size:10px"></i> Sleeper</span>`:'';
-    const goneB='';
+    // Admin-only indicator: this shop was still present in the previous import and disappeared in the latest snapshot.
+    const goneB=(isAdmin && gone && s._newlyLeft)
+      ?` <span class="badge" title="Was present in the previous import — left in the latest snapshot" style="background:#fdeaea;color:var(--ep-red);border-color:var(--ep-red)"><i class="ti ti-clock" style="font-size:10px"></i> Newly left</span>`
+      :'';
     const provBadge=gone
       ?`<span class="badge ot"><i class="ti ti-arrow-right" style="font-size:10px"></i> Left Spreedly</span>`
       :`<span class="badge sp"><span class="dot sp"></span> Spreedly</span>`;
@@ -1862,6 +1885,9 @@ function triggerCSVUpload(){
       } else {
         toast(fmt(parsed.length)+' shops updated from CSV');
       }
+      const oldCsv = await dbLoadCSV();
+      if(oldCsv){ await dbSaveSpreedlyPrevCSV(oldCsv); spPrevShops = parseCSVAuto(oldCsv); }
+      else { spPrevShops = []; await dbSaveSpreedlyPrevCSV(''); }
       await dbSaveCSV(rawText);
       await dbStampUpload('spreedly'); await dbStampModified();
       refresh(); doSearch(); renderDataFieldsBaseline();
@@ -1890,6 +1916,7 @@ async function clearData(){
   baseline = null;
   partnerBaseline = {};
   baselineShops = [];
+  spPrevShops = [];
   await dbClearShops();
   await dbSavePartnerBaseline();
   await dbSaveBaselineShops();
