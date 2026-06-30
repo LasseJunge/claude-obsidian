@@ -177,8 +177,9 @@ const STATUS_META = {
   TRIAL_ENDED:    { label: 'Trial Ended',       color: '#6b7280', bg: '#f3f4f6', short: 'Ended' },
   ACTIVE:         { label: 'Active (paying)',   color: '#15803d', bg: '#dcfce7', short: 'Active' },
   PAYMENT_FAILED: { label: 'Payment Failed',    color: '#b91c1c', bg: '#fee2e2', short: 'Failed' },
+  CANCELED:       { label: 'Canceled (churned)',color: '#9333ea', bg: '#f3e8ff', short: 'Churn' },
 };
-const STATUS_ORDER = ['TRIAL_STARTED', 'ACTIVE', 'TRIAL_ENDED', 'PAYMENT_FAILED'];
+const STATUS_ORDER = ['TRIAL_STARTED', 'ACTIVE', 'TRIAL_ENDED', 'PAYMENT_FAILED', 'CANCELED'];
 const statusMeta = (s) => STATUS_META[s] || { label: s, color: '#6b7280', bg: '#f3f4f6', short: s };
 
 // Robustes Parsing für last_login: ISO bevorzugt, DD.MM.YYYY / DD/MM/YYYY / DD-MM-YYYY als UTC.
@@ -273,7 +274,7 @@ const DATASET_IDS = ['epages', 'spayment'];
 const ACTIVE_DATASET_KEY = 'active_dataset';
 
 const REQUIRED_IMPORT_COLUMNS = ['stripe_subscription_status', 'stripe_customer_id'];
-const KNOWN_IMPORT_STATUSES = new Set(['TRIAL_STARTED', 'TRIAL_ENDED', 'ACTIVE', 'PAYMENT_FAILED']);
+const KNOWN_IMPORT_STATUSES = new Set(['TRIAL_STARTED', 'TRIAL_ENDED', 'ACTIVE', 'PAYMENT_FAILED', 'CANCELED']);
 
 const TRIAL_DURATION_DAYS = 14;
 
@@ -326,6 +327,7 @@ function SubscriptionDashboard() {
   const [packageViewMode, setPackageViewMode] = useState('total');
   const [countryBarLayout, setCountryBarLayout] = useState('stacked');
   const [trialStartsGranularity, setTrialStartsGranularity] = useState('month');
+  const [loginActivityScope, setLoginActivityScope] = useState('paying');
   const fileInputRef = useRef(null);
 
   // Snapshots beim Wechsel des Datasets neu laden.
@@ -358,6 +360,7 @@ function SubscriptionDashboard() {
     setPackageViewMode('total');
     setCountryBarLayout('stacked');
     setTrialStartsGranularity('month');
+    setLoginActivityScope('paying');
   }, [activeDataset]);
 
   const persistSnapshots = useCallback(async (next) => {
@@ -572,6 +575,8 @@ function SubscriptionDashboard() {
       stillTrial: 0,
       // Aktuell mit fehlgeschlagener Zahlung
       paymentFailed: 0,
+      // Converted then canceled (CANCELED after having been ACTIVE)
+      churned: 0,
       // Sonstige (z.B. nicht im neuesten Snapshot oder unbekannter Status)
       other: 0,
       noCreatedAt: 0,
@@ -583,6 +588,7 @@ function SubscriptionDashboard() {
       const sortedHist = [...shop.history].sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
       const inLatest = sortedHist.find(h => h.snapshotId === latest.id);
       const hadTrialEnded = sortedHist.some(h => h.status === 'TRIAL_ENDED');
+      const everActive = sortedHist.some(h => h.status === 'ACTIVE');
 
       if (!inLatest) {
         r.other++;
@@ -596,6 +602,10 @@ function SubscriptionDashboard() {
         // War er vorher in TRIAL_ENDED?
         if (hadTrialEnded) r.rescuedActive++;
         else r.directActive++;
+      } else if (cur === 'CANCELED') {
+        // Churn only counts as conversion if the shop was ever paying.
+        if (everActive) r.churned++;
+        else r.other++;
       } else if (cur === 'TRIAL_ENDED') {
         r.stillTrialEnded++;
       } else if (cur === 'PAYMENT_FAILED') {
@@ -608,12 +618,15 @@ function SubscriptionDashboard() {
   }, [cohortShops, latest]);
 
   const totalActive = trialCohort.directActive + trialCohort.rescuedActive;
-  const totalRate = trialCohort.total > 0 ? totalActive / trialCohort.total * 100 : null;
+  // Conversion = ever reached paying state (currently active OR since churned).
+  const totalConverted = totalActive + trialCohort.churned;
+  const totalRate = trialCohort.total > 0 ? totalConverted / trialCohort.total * 100 : null;
+  const churnRate = totalConverted > 0 ? trialCohort.churned / totalConverted * 100 : null;
   const activeSplitLabel = `${trialCohort.directActive} direkt + ${trialCohort.rescuedActive} gerettet`;
 
   // Login-Aktivität der Shop-Owner (basiert auf last_login im neuesten Snapshot)
   const loginActivity = useMemo(() => {
-    const r = { total: 0, active: 0, inactive: 0, lost: 0, neverLoggedIn: 0, referenceDate: null };
+    const r = { total: 0, totalAll: 0, active: 0, inactive: 0, lost: 0, neverLoggedIn: 0, referenceDate: null };
     if (!latest) return r;
     const refDate = latest.snapshotAt ? new Date(latest.snapshotAt) : new Date();
     r.referenceDate = refDate;
@@ -622,6 +635,9 @@ function SubscriptionDashboard() {
     filteredShops.forEach(shop => {
       const inLatest = shop.history.find(h => h.snapshotId === latest.id);
       if (!inLatest) return;
+      r.totalAll++;
+      // "Paying" view = currently active or in dunning (payment failed).
+      if (loginActivityScope === 'paying' && inLatest.status !== 'ACTIVE' && inLatest.status !== 'PAYMENT_FAILED') return;
       r.total++;
       const ll = (inLatest.lastLogin || '').trim();
       const parsed = parseLoginDate(ll);
@@ -636,7 +652,7 @@ function SubscriptionDashboard() {
       else r.lost++;
     });
     return r;
-  }, [filteredShops, latest]);
+  }, [filteredShops, latest, loginActivityScope]);
 
   // Übergänge zwischen Snapshots
   const transitions = useMemo(() => {
@@ -833,7 +849,7 @@ function SubscriptionDashboard() {
 
   // Conversion-Rate nach Produktkategorie (Trial-Kohorte split Shop/Website)
   const conversionByCategory = useMemo(() => {
-    const make = () => ({ total: 0, directActive: 0, rescuedActive: 0, stillTrial: 0, stillTrialEnded: 0, paymentFailed: 0, other: 0 });
+    const make = () => ({ total: 0, directActive: 0, rescuedActive: 0, churned: 0, stillTrial: 0, stillTrialEnded: 0, paymentFailed: 0, other: 0 });
     const r = { Shop: make(), Website: make() };
     if (!latest) return r;
     cohortShops.forEach(shop => {
@@ -845,10 +861,12 @@ function SubscriptionDashboard() {
       const sortedHist = [...shop.history].sort((a, b) => new Date(a.snapshotAt) - new Date(b.snapshotAt));
       const inLatest = sortedHist.find(h => h.snapshotId === latest.id);
       const hadTrialEnded = sortedHist.some(h => h.status === 'TRIAL_ENDED');
+      const everActive = sortedHist.some(h => h.status === 'ACTIVE');
       if (!inLatest) { bucket.other++; return; }
       const cur = inLatest.status;
       if (cur === 'TRIAL_STARTED') bucket.stillTrial++;
       else if (cur === 'ACTIVE') { if (hadTrialEnded) bucket.rescuedActive++; else bucket.directActive++; }
+      else if (cur === 'CANCELED') { if (everActive) bucket.churned++; else bucket.other++; }
       else if (cur === 'TRIAL_ENDED') bucket.stillTrialEnded++;
       else if (cur === 'PAYMENT_FAILED') bucket.paymentFailed++;
       else bucket.other++;
@@ -857,7 +875,7 @@ function SubscriptionDashboard() {
   }, [cohortShops, latest, dataset]);
 
   const timeSeries = useMemo(() => sorted.map(snap => {
-    const c = { TRIAL_STARTED: 0, TRIAL_ENDED: 0, ACTIVE: 0, PAYMENT_FAILED: 0 };
+    const c = { TRIAL_STARTED: 0, TRIAL_ENDED: 0, ACTIVE: 0, PAYMENT_FAILED: 0, CANCELED: 0 };
     snap.shops.forEach(s => { if (c[s.status] !== undefined) c[s.status]++; });
     return { date: formatShortDate(snap.snapshotAt), ...c };
   }), [sorted]);
@@ -1099,9 +1117,14 @@ function SubscriptionDashboard() {
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: STATUS_META.ACTIVE.color, fontWeight: 600 }}>Total Conversion</div>
                         <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 28, fontWeight: 700, color: STATUS_META.ACTIVE.color, lineHeight: 1 }}>{totalRate.toFixed(1)}%</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>{totalActive} of {trialCohort.total}</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>{totalConverted} of {trialCohort.total}</div>
+                        {trialCohort.churned > 0 && (
+                          <div style={{ fontSize: 10, color: STATUS_META.CANCELED.color, marginTop: 2, fontWeight: 500 }}>
+                            {trialCohort.churned} of {totalConverted} since churned ({churnRate.toFixed(0)}%)
+                          </div>
+                        )}
                         <div style={{ fontSize: 10, color: C.muted, marginTop: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <span style={{ background: C.surface2, borderRadius: 4, padding: '1px 5px', fontWeight: 500 }}>Since April 2026</span>
+                          <span style={{ background: C.subtle, borderRadius: 4, padding: '1px 5px', fontWeight: 500 }}>Since April 2026</span>
                           <span title="Shops created before April 2026 are excluded — tracking data is only reliable from that date onwards." style={{ cursor: 'help', opacity: 0.6 }}>ⓘ</span>
                         </div>
                       </div>
@@ -1118,6 +1141,14 @@ function SubscriptionDashboard() {
                     color={STATUS_META.ACTIVE.color}
                     bold
                   />
+                  {trialCohort.churned > 0 && (
+                    <CohortBar
+                      label="Churned (canceled after converting)"
+                      count={trialCohort.churned}
+                      total={trialCohort.total}
+                      color={STATUS_META.CANCELED.color}
+                    />
+                  )}
                   {/* Separator */}
                   <div style={{ borderTop: `1px solid ${C.border}`, margin: '4px 0' }} />
                   {/* Still in TRIAL_ENDED */}
@@ -1241,7 +1272,7 @@ function SubscriptionDashboard() {
               })()}
 
               {/* LOGIN-AKTIVITÄT DER SHOP-OWNER */}
-              {loginActivity.total > 0 && (() => {
+              {loginActivity.totalAll > 0 && (() => {
                 const buckets = [
                   { id: 'active',   label: 'Active (≤ 30 days)',          count: loginActivity.active,   color: STATUS_META.ACTIVE.color,         bg: STATUS_META.ACTIVE.bg },
                   { id: 'inactive', label: 'Inactive (30–90 days)',       count: loginActivity.inactive, color: '#b45309',                        bg: '#fef3c7' },
@@ -1254,13 +1285,26 @@ function SubscriptionDashboard() {
                 return (
                   <section style={cardStyle}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-                      <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Shop Owner Login Activity</h2>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: 0, fontWeight: 600 }}>Shop Owner Login Activity</h2>
+                        <div role="tablist" aria-label="Select login scope" style={{ display: 'inline-flex', border: `1px solid ${C.borderStrong}`, borderRadius: 8, padding: 3, background: C.subtle }}>
+                          {[{ id: 'paying', label: 'Paying' }, { id: 'all', label: 'All' }].map(opt => {
+                            const isActive = loginActivityScope === opt.id;
+                            return (
+                              <button key={opt.id} role="tab" aria-selected={isActive} onClick={() => setLoginActivityScope(opt.id)} style={{
+                                border: 'none', background: isActive ? C.accent : 'transparent', color: isActive ? '#fff' : C.inkSoft,
+                                padding: '5px 12px', borderRadius: 6, cursor: isActive ? 'default' : 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Inter, sans-serif',
+                              }}>{opt.label}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
                       <div style={{ fontSize: 11, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
                         Reference date: <strong style={{ color: C.ink }}>{refLabel}</strong> · {loginActivity.total} shop{loginActivity.total !== 1 ? 's' : ''}
                       </div>
                     </div>
                     <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px 0' }}>
-                      When did shop owners last log in? Active = at least one login in the last 30 days.
+                      When did shop owners last log in? {loginActivityScope === 'paying' ? 'Paying shops only (active + payment-failed).' : 'All shops in the latest snapshot.'} Active = login within the last 30 days.
                     </p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -1429,29 +1473,29 @@ function SubscriptionDashboard() {
 
               {/* CONVERSION RATE NACH PRODUKTKATEGORIE */}
               {packageDistribution.total > 0 && (() => {
-                const rate = (b) => b.total > 0 ? ((b.directActive + b.rescuedActive) / b.total * 100) : 0;
+                const rate = (b) => b.total > 0 ? ((b.directActive + b.rescuedActive + b.churned) / b.total * 100) : 0;
                 const cats = [
                   { id: 'Shop', label: 'Shop', color: STATUS_META.ACTIVE.color, bg: STATUS_META.ACTIVE.bg, data: conversionByCategory.Shop },
                   { id: 'Website', label: 'Website', color: STATUS_META.TRIAL_STARTED.color, bg: STATUS_META.TRIAL_STARTED.bg, data: conversionByCategory.Website },
                 ];
-                const chartData = cats.map(c => ({ name: c.label, rate: Number(rate(c.data).toFixed(1)), converted: c.data.directActive + c.data.rescuedActive, total: c.data.total, color: c.color }));
+                const chartData = cats.map(c => ({ name: c.label, rate: Number(rate(c.data).toFixed(1)), converted: c.data.directActive + c.data.rescuedActive + c.data.churned, total: c.data.total, color: c.color }));
                 const hasAny = cats.some(c => c.data.total > 0);
                 if (!hasAny) return null;
                 return (
                   <section style={cardStyle}>
                     <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, margin: '0 0 4px 0', fontWeight: 600 }}>Conversion Rate by Product Category</h2>
-                    <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px 0' }}>Trial cohort split by Shop and Website. Conversion = directly active + rescued from TRIAL_ENDED.</p>
+                    <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px 0' }}>Trial cohort split by Shop and Website. Conversion = ever reached paying state (active + rescued + since-churned).</p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 20 }}>
                       {cats.map(c => {
-                        const conv = c.data.directActive + c.data.rescuedActive;
+                        const conv = c.data.directActive + c.data.rescuedActive + c.data.churned;
                         const r = rate(c.data);
                         return (
                           <div key={c.id} style={{ padding: 16, background: c.bg, border: `1px solid ${c.color}33`, borderRadius: 6 }}>
                             <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: c.color, fontWeight: 600, marginBottom: 6 }}>{c.label}</div>
                             <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 32, fontWeight: 700, color: c.color, lineHeight: 1 }}>{r.toFixed(1)}%</div>
                             <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 6, fontFamily: 'JetBrains Mono, monospace' }}>{conv} / {c.data.total} converted</div>
-                            <div style={{ fontSize: 11, color: C.muted, marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>direct {c.data.directActive} · rescued {c.data.rescuedActive}</div>
+                            <div style={{ fontSize: 11, color: C.muted, marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>direct {c.data.directActive} · rescued {c.data.rescuedActive}{c.data.churned > 0 ? ` · churned ${c.data.churned}` : ''}</div>
                           </div>
                         );
                       })}
